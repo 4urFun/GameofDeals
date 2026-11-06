@@ -134,9 +134,9 @@ body.is-drag .drophint{display:grid}
 .showcase[hidden]{display:none}
 .sc-in{display:grid;justify-items:center;gap:10px;background:rgba(10,14,28,.88);border:1px solid rgba(230,182,92,.45);border-radius:20px;padding:16px 18px;max-width:min(92vw,760px)}
 .sc-cards{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.sc-cards img{width:clamp(130px,36vw,230px);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.6)}
+.sc-cards img{width:clamp(150px,38vw,300px);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.6)}
 .sc-cards img:nth-child(n+2){width:clamp(90px,24vw,170px)}
-.sc-t{font-size:18px;font-weight:800;text-align:center;color:var(--gold-soft)}
+.sc-t{font-size:20px;font-weight:800;text-align:center;color:var(--gold-soft)}
 .showcase.k-resp .sc-in{border-color:var(--danger)}.showcase.k-resp .sc-t{color:#f6b3ac}
 .showcase.k-pay .sc-t{color:var(--teal)}
 .hc.resp::after{content:"رد";position:absolute;top:6px;left:6px;background:var(--danger);color:#fff;font-size:12px;font-weight:800;border-radius:7px;padding:0 7px}
@@ -224,3 +224,10 @@ table.adm input{padding:6px 8px;font-size:14px}
   .pendwrap{max-width:720px;margin-inline:auto}
 }
 @media(max-width:380px){.seat{width:92px}.sav .av{width:38px;height:38px}}
+
+/* آخر حركة: تبقى ظاهرة وسط الطاولة */
+.lastplay{display:flex;align-items:center;gap:10px;background:rgba(8,12,26,.82);border:1px solid rgba(230,182,92,.4);border-radius:14px;padding:6px 10px;max-width:100%;text-align:start;color:var(--ink)}
+.lastplay.k-resp{border-color:var(--danger)}
+.lp-cards{display:flex;flex:none}.lp-cards img{width:clamp(44px,11vw,70px);border-radius:6px;margin-inline-start:-18px;box-shadow:0 3px 8px rgba(0,0,0,.5)}.lp-cards img:first-child{margin-inline-start:0}
+.lp-t{font-size:14px;font-weight:700;line-height:1.5;color:var(--gold-soft);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tcenter .lastlog{display:none}
