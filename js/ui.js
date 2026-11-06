@@ -283,7 +283,7 @@ function tableV(){const S=G;if(!S.P||(!S.P[uid]&&S.status!=='ended'))return `<di
  <div class="gbody"><main class="tablecol">
  <div class="table-area" id="dropzone"><div class="felt"><span class="wm">GAME OF DEALS</span></div><div class="drophint">ارمِ البطاقة هنا</div>${opp.map((u,k)=>seatV(u,pos[k])).join('')}
   <div class="tcenter"><div class="piles"><button class="deck ${canDraw?'can':''}" data-go="draw" aria-label="كومة السحب"><span class="n">${S.deck.length}</span></button>${top?`<button class="top" data-card="${esc(top)}" aria-label="آخر بطاقة: ${esc(E.C(top).n)}"><img src="${img(top)}" alt=""><span class="n">محروقة ${S.discard.length}</span></button>`:`<div class="top empty"></div>`}</div>
-  ${S.pending?`<div class="pend-desk">${pendingV()}</div>`:`<div class="lastlog">${lg?esc(lg.m):''}</div>`}</div></div>
+  ${lastPlayV(S)}${S.pending?`<div class="pend-desk">${pendingV()}</div>`:`<div class="lastlog">${lg?esc(lg.m):''}</div>`}</div></div>
  ${S.pending?`<div class="pendwrap">${pendingV()}</div>`:''}
  ${myT&&T_.phase==='jail'?jailV():''}
  <section class="mezone"><div class="mebar">${av(uid)}<b class="grow">${esc(pname(uid))}</b><span>🏆 <b>${E.score(meP)}</b>/${S.cfg.winSets}</span><span>🏦 <b>${E.bankMoney(meP)}M</b>${E.hasVisa(meP)?' + فيزا':''}</span><button class="btn sm" data-go="mymiss">مهماتي (${meP.miss.filter(m=>m.done).length}/${meP.miss.length})</button></div>
@@ -299,6 +299,7 @@ function layoutHand(){const box=$('#hand');if(!box)return;const cards=[...box.qu
  const ch=cw*597/400;box.style.height=Math.round(ch+18)+'px';const Wu=W-16;const step=n>1?Math.min(cw*0.86,(Wu-cw)/(n-1)):0;const total=cw+step*(n-1);const start=(W-total)/2;const mid=(n-1)/2;const ang=Math.min(2.2,14/n);
  cards.forEach((c,k)=>{const off=k-mid;c.style.width=cw+'px';c.style.right=(start+step*k)+'px';c.style.zIndex=10+k;c.style.setProperty('--t',`translateY(${(Math.abs(off)*Math.abs(off)*0.7).toFixed(1)}px) rotate(${(off*ang).toFixed(2)}deg)`);});}
 window.addEventListener('resize',()=>{if(view==='table')layoutHand();});
+function lastPlayV(S){const ev=(S.evs||[]).slice(-1)[0];if(!ev)return '';return `<button class="lastplay k-${ev.k}" data-card="${esc(ev.c[0])}" aria-label="آخر حركة"><span class="lp-cards">${ev.c.slice(0,3).map(i=>`<img src="${img(i)}" alt="">`).join('')}</span><span class="lp-t">${esc(ev.t)}</span></button>`;}
 function onHandTap(id){cardModal(id,'hand');}
 // السحب والرمي على الطاولة
 let drag=null;
@@ -325,10 +326,10 @@ function dropPlay(id){const S=G;if(!S||S.status!=='playing')return;const c=E.C(i
 // عرض البطاقة الملعوبة للجميع
 let evSeen=null,evQ=[],evT=null;
 function feedEvents(V){const evs=V.evs||[];const last=evs.length?evs[evs.length-1].n:0;if(evSeen===null||last<evSeen){evSeen=last;return;}
- const fresh=evs.filter(x=>x.n>evSeen&&x.u!==uid);evSeen=last;if(!fresh.length)return;evQ.push(...fresh);if(evQ.length>3)evQ=evQ.slice(-3);if(!evT)nextEv();}
+ const fresh=evs.filter(x=>x.n>evSeen);evSeen=last;if(!fresh.length)return;evQ.push(...fresh);if(evQ.length>3)evQ=evQ.slice(-3);if(!evT)nextEv();}
 function nextEv(){const box=$('#showcase');const ev=evQ.shift();if(!ev){if(box)box.hidden=true;evT=null;return;}
  if(box){box.className='showcase k-'+ev.k;box.innerHTML=`<div class="sc-in"><div class="sc-cards">${ev.c.map(i=>`<img src="${img(i)}" alt="">`).join('')}</div><div class="sc-t">${esc(ev.t)}</div></div>`;box.hidden=false;}
- evT=setTimeout(nextEv,evQ.length?1500:2300);}
+ evT=setTimeout(nextEv,evQ.length?1600:2600);}
 function resultV(){const S=G;const dur=Math.round(((S.endedAt||Date.now())-S.startedAt)/60000);const rows=S.order.slice().sort((a,b)=>E.score(S.P[b])-E.score(S.P[a]));
  return `<div class="page"><div class="wrap narrow"><div class="panel result stack"><div class="trophy">${S.winner?'🏆 '+esc(pname(S.winner)):'انتهت المباراة'}</div><p class="muted">${S.winner?`فاز بجمع ${E.score(S.P[S.winner])} مجموعات • `:''}مدة المباراة ${dur} دقيقة • ${S.tc} دورة</p>
  ${rows.map((u,k)=>`<div class="score-row"><span class="row">${k+1}. ${av(u)} ${esc(pname(u))}</span><span>${E.setsCount(S.P[u])} مجموعات + ${E.missionsDone(S.P[u])} مهام</span><span>🏦 ${E.bankMoney(S.P[u])}M</span></div>`).join('')}
