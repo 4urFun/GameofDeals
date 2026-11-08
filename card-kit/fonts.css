@@ -1,0 +1,3 @@
+/* خط Tajawal محلي (بدون إنترنت): 500 للنصوص و800 للعناوين */
+@font-face{font-family:'Tajawal';src:url('fonts/Tajawal-Medium.ttf') format('truetype');font-weight:100 600;font-style:normal;font-display:swap}
+@font-face{font-family:'Tajawal';src:url('fonts/Tajawal-ExtraBold.ttf') format('truetype');font-weight:650 1000;font-style:normal;font-display:swap}

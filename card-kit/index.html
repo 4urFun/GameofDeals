@@ -1,0 +1,7 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GAME OF DEALS - Card Kit Demo</title><link rel="stylesheet" href="cards.css">
+<style>html,body{margin:0;background:var(--bg);font-family:Tajawal,"Segoe UI",Tahoma,sans-serif}
+h1{font-size:18px;text-align:center;color:#888;margin:14px}
+#g{display:flex;flex-wrap:wrap;gap:22px;justify-content:center;padding:14px}</style></head><body><h1>GAME OF DEALS — 161 نوع — 265 بطاقة</h1><div id="g"></div>
+<script src="card-art.js"></script><script src="cards-data.js"></script><script src="card-renderer.js"></script>
+<script>document.getElementById('g').innerHTML=GOD_CARDS.map(GOD.card).join('');</script></body></html>

@@ -1,0 +1,40 @@
+/* تنسيق البطاقات (260x364). الخط: Tajawal */
+@import url('fonts.css');
+
+:root{--bg:#e9ebf0;--ink:#14213d;--pn:#fafbfd;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#10131c}}
+.c{--a:#f5b700;--d:#8a6100;width:260px;height:364px;border-radius:20px;padding:7px;position:relative;box-sizing:border-box;background:linear-gradient(160deg,var(--a),var(--d));box-shadow:0 8px 20px #0004,inset 0 0 0 2px #ffffff55;color:var(--ink);display:flex;flex-direction:column}
+.in{flex:1;border-radius:14px;background:var(--pn);display:flex;flex-direction:column;overflow:hidden;border:2px solid #ffd96a}
+.hd{background:linear-gradient(180deg,var(--a),var(--d));color:var(--tx,#fff);padding:10px 12px;display:flex;align-items:center;justify-content:center;gap:8px;min-height:58px;text-shadow:0 1px 2px #0006}
+.hd b{flex:1;font-size:23px;line-height:1.2;font-weight:800;text-align:center}
+.k{width:46px;height:46px;border-radius:50%;background:#fff;color:var(--ink);border:3px solid var(--a);display:grid;place-items:center;font-weight:800;font-size:19px;text-shadow:none;position:absolute;top:6px;left:8px;z-index:2}
+.m{direction:ltr;unicode-bidi:isolate;display:inline-block}
+.art{position:relative;height:112px;background:radial-gradient(circle at 50% 55%,#fff 0,color-mix(in srgb,var(--a) 28%,#fff) 100%);display:grid;place-items:center;border-bottom:3px solid var(--a)}
+.art svg{width:92%;height:100%;color:var(--d);filter:drop-shadow(0 3px 3px #0004)}
+.bd{flex:1;padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:5px}
+.t{font-size:19px;line-height:1.45;font-weight:500;text-align:center}
+.row{display:flex;justify-content:space-between;font-size:18px;font-weight:800;padding:3px 8px;border-radius:8px;background:#eef0f4}
+.row .m{color:var(--d)}
+.hh{text-align:center;font-weight:800;font-size:17px}
+.ft{font-size:14px;text-align:center;padding:5px;background:color-mix(in srgb,var(--a) 20%,#fff);font-weight:800;margin:0 8px 8px;border-radius:9px}
+.x{position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);background:#14213d;color:#fff;font:800 12px sans-serif;padding:3px 10px;border-radius:99px}
+.cash .in{background:repeating-radial-gradient(circle at 50% 50%,#0000 0 9px,color-mix(in srgb,var(--a) 14%,#0000) 9px 10px),linear-gradient(160deg,#fff,color-mix(in srgb,var(--a) 16%,#fff))}
+.big{flex:1;display:grid;place-content:center;text-align:center}
+.big b{font-size:78px;line-height:1;color:var(--d);font-weight:800;text-shadow:0 3px 0 #fff,0 6px 8px #0003}
+.big span{font-size:24px;font-weight:800;color:var(--d)}
+.cor{position:absolute;font:800 15px sans-serif;color:var(--d)}
+.blk{background:linear-gradient(160deg,#d4af37,#6b5314 50%,#d4af37);--a:#d4af37;--d:#d4af37}
+.blk .in{background:radial-gradient(circle at 50% 35%,#2a2418,#050506 70%);border-color:#b8921f;color:#f6e7b4}
+.blk .hd{background:none;justify-content:center;text-align:center;border-bottom:1px solid #d4af3766}
+.blk .hd b{color:#ffd966;flex:none;letter-spacing:1px;font-size:24px}
+.blk .art{background:radial-gradient(circle,#ff6a0044,#0000 65%);border-color:#d4af37}
+.blk .art svg{color:#ffd966;filter:drop-shadow(0 0 10px #ff8c00)}
+.blk .t{color:#fff;font-size:20px}
+.dh{display:flex}
+.chips{display:flex;height:18px}.chips i{flex:1}
+.msn .art{height:84px}
+.dh span{flex:1;padding:10px 6px;text-align:center;font-weight:800;font-size:16px;color:#fff}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-inline-end:6px}
+.msn .hd{justify-content:center}
+.msn .t{font-size:21px;font-weight:800}
+.cond{font-size:14px;margin:0 8px 8px;padding:6px;border:2px dashed var(--a);border-radius:9px;text-align:center;font-weight:500}
