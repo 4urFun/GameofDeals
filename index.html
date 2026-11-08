@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#121a2e">
+<meta name="description" content="لعبة Game of Deals الإصدار الخامس أونلاين مع أصحابك، من الجوال أو الكمبيوتر.">
+<title>Game of Deals</title>
+<link rel="icon" href="img/back.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="card-kit/fonts.css?v=7">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lalezar&display=swap">
+<link rel="preload" href="card-kit/fonts/Tajawal-Medium.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="card-kit/fonts/Tajawal-ExtraBold.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="css/style.css?v=7">
+</head>
+<body>
+<div id="app"><div class="page"><div class="wrap narrow empty-st">جارٍ التحميل…</div></div></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="showcase" id="showcase" hidden aria-live="polite"></div>
+<noscript><p style="padding:20px">لازم تفعّل JavaScript لتشغيل اللعبة.</p></noscript>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<!-- Firebase (للحسابات والغرف). يشتغل فقط إذا عبّيت js/config.js -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<!-- حزمة تصميم البطاقات -->
+<script src="card-kit/card-art.js?v=7"></script>
+<script src="card-kit/cards-data.js?v=7"></script>
+<script src="card-kit/card-renderer.js?v=7"></script>
+<script src="card-kit/card-map.js?v=7"></script>
+<script src="js/kit.js?v=7"></script>
+<script src="js/config.js?v=7"></script>
+<script src="js/engine.js?v=7"></script>
+<script src="js/fb.js?v=7"></script>
+<script src="js/accounts.js?v=7"></script>
+<script src="js/ui.js?v=7"></script>
+</body>
+</html>
