@@ -13,7 +13,7 @@
 html,body{height:100%}
 #app{height:100%}
 body{margin:0;background:radial-gradient(120% 70% at 50% 0%,#1a2444,var(--bg) 60%) fixed,var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.6;direction:rtl;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
-img{max-width:100%}
+:is(img,god-card){max-width:100%}
 [hidden]{display:none!important}
 button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold-soft);outline-offset:2px}
@@ -46,7 +46,7 @@ h2{font-size:26px}h3{font-size:19px}
 .acct{display:flex;gap:8px;align-items:center;justify-content:flex-start;flex-wrap:wrap;margin-bottom:6px;font-size:15px}
 .hero{display:grid;justify-items:center;gap:6px;text-align:center;padding-block:8px}
 .fan{display:flex;justify-content:center;height:190px;margin-top:8px;align-items:flex-start}
-.fan img{width:100px;border-radius:9px;margin-inline:-24px;transform-origin:50% 120%;box-shadow:0 6px 16px rgba(0,0,0,.45)}
+.fan :is(img,god-card){width:100px;border-radius:9px;margin-inline:-24px;transform-origin:50% 120%;box-shadow:0 6px 16px rgba(0,0,0,.45)}
 .logo{font-family:var(--display);font-weight:400;font-size:clamp(46px,12vw,84px);line-height:1;color:var(--gold-soft)}
 .logo small{display:block;font-family:var(--font);font-weight:700;font-size:.28em;color:var(--ink);letter-spacing:4px;margin-top:8px}
 .menu{display:grid;gap:10px;margin-block:18px}
@@ -75,7 +75,7 @@ h2{font-size:26px}h3{font-size:19px}
 .felt{position:absolute;inset:40px 3% 8px;border-radius:30px;background:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/34px 34px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/34px 34px,radial-gradient(ellipse at 50% 45%,var(--board2),var(--board) 75%);border:2px solid rgba(230,182,92,.45);outline:1px dashed rgba(230,182,92,.22);outline-offset:-12px;display:grid;place-items:end center;overflow:hidden}
 .felt .wm{font-family:var(--display);font-size:clamp(22px,5vw,44px);letter-spacing:6px;color:rgba(230,182,92,.07);padding-bottom:8px;direction:ltr;user-select:none}
 .drophint{position:absolute;inset:40px 3% 8px;border-radius:30px;border:3px dashed var(--teal);display:none;place-items:center;font-weight:800;font-size:18px;color:var(--teal);background:rgba(98,195,181,.08);z-index:4;pointer-events:none}
-body.is-drag .drophint{display:grid}
+body.drag-table .drophint{display:grid}
 .table-area.over .drophint{background:rgba(98,195,181,.22);color:#fff}
 .seat{position:absolute;transform:translate(-50%,0);width:104px;display:grid;justify-items:center;gap:1px;background:rgba(14,20,38,.9);border:2px solid rgba(236,235,243,.1);border-radius:14px;padding:6px 4px;text-align:center;z-index:3}
 .seat.turn{border-color:var(--gold);box-shadow:0 0 0 3px rgba(216,178,96,.35)}
@@ -96,7 +96,7 @@ body.is-drag .drophint{display:grid}
 .deck{width:clamp(58px,15vw,92px);aspect-ratio:400/597;border:0;border-radius:8px;background:url(../img/back.png) center/cover;position:relative;box-shadow:3px 3px 0 #0b1530,5px 5px 8px rgba(0,0,0,.45)}
 .deck.can{box-shadow:0 0 0 3px var(--gold),3px 3px 0 #0b1530}
 .top{width:clamp(70px,19vw,118px);border:0;background:none;padding:0;position:relative}
-.top img{width:100%;display:block;border-radius:9px;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.top :is(img,god-card){width:100%;display:block;border-radius:9px;box-shadow:0 6px 16px rgba(0,0,0,.5)}
 .top.empty{aspect-ratio:400/597;border:2px dashed var(--line);border-radius:9px}
 .deck .n,.top .n{position:absolute;bottom:-12px;inset-inline:0;margin:auto;width:max-content;background:var(--bar);border-radius:8px;padding:0 8px;font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink)}
 .lastlog{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;color:var(--ink);text-align:center;background:rgba(0,0,0,.28);border-radius:10px;padding:4px 10px;max-width:100%}
@@ -114,8 +114,8 @@ body.is-drag .drophint{display:grid}
 .grp.full{border-color:var(--gold)}
 .grp .lbl{font-size:12.5px;color:var(--muted);white-space:nowrap;display:flex;align-items:center;gap:5px}
 .dotc{width:10px;height:10px;border-radius:3px;display:inline-block}
-.grp .cards{display:flex}.grp .cards img{width:54px;border-radius:5px;margin-inline-start:-32px;cursor:pointer;box-shadow:-2px 2px 5px rgba(0,0,0,.4)}.grp .cards img:first-child{margin-inline-start:0}
-.grp .blds{display:flex;gap:3px}.grp .blds img{width:26px;border-radius:3px;cursor:pointer}
+.grp .cards{display:flex}.grp .cards :is(img,god-card){width:54px;border-radius:5px;margin-inline-start:-32px;cursor:pointer;box-shadow:-2px 2px 5px rgba(0,0,0,.4)}.grp .cards :is(img,god-card):first-child{margin-inline-start:0}
+.grp .blds{display:flex;gap:3px}.grp .blds :is(img,god-card){width:26px;border-radius:3px;cursor:pointer}
 .bank{display:flex;gap:6px;flex-wrap:wrap}
 .coin{background:var(--gold-soft);color:#2a1d07;border-radius:8px;padding:1px 9px;font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
 .coin.visa{background:#6a55b5;color:#fff}
@@ -125,8 +125,8 @@ body.is-drag .drophint{display:grid}
 .actbar .info{font-size:14px;color:var(--muted)}
 .hand{position:relative;height:240px;margin-top:6px;user-select:none;-webkit-user-select:none}
 .hc{position:absolute;bottom:4px;border:0;padding:0;background:none;border-radius:11px;transform-origin:50% 140%;transform:var(--t);transition:transform .12s ease-out;touch-action:none;cursor:grab}
-.hc img{width:100%;display:block;border-radius:11px;box-shadow:0 6px 14px rgba(0,0,0,.55);pointer-events:none}
-@media(hover:hover){.hc:hover{transform:translateY(-34px) scale(1.16);z-index:90!important}.hc:hover img{box-shadow:0 16px 30px rgba(0,0,0,.65);outline:3px solid var(--gold-soft);outline-offset:1px}}
+.hc :is(img,god-card){width:100%;display:block;border-radius:11px;box-shadow:0 6px 14px rgba(0,0,0,.55);pointer-events:none}
+@media(hover:hover){.hc:hover{transform:translateY(-34px) scale(1.16);z-index:90!important}.hc:hover :is(img,god-card){box-shadow:0 16px 30px rgba(0,0,0,.65);outline:3px solid var(--gold-soft);outline-offset:1px}}
 .hc.dragging{opacity:.25}
 .ghost{position:fixed;left:0;top:0;z-index:50;pointer-events:none;border-radius:11px;box-shadow:0 20px 40px rgba(0,0,0,.6);outline:3px solid var(--teal)}
 /* البطاقة الملعوبة تظهر كبيرة للجميع */
@@ -134,8 +134,8 @@ body.is-drag .drophint{display:grid}
 .showcase[hidden]{display:none}
 .sc-in{display:grid;justify-items:center;gap:10px;background:rgba(10,14,28,.88);border:1px solid rgba(230,182,92,.45);border-radius:20px;padding:16px 18px;max-width:min(92vw,760px)}
 .sc-cards{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.sc-cards img{width:clamp(150px,38vw,300px);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.6)}
-.sc-cards img:nth-child(n+2){width:clamp(90px,24vw,170px)}
+.sc-cards :is(img,god-card){width:clamp(150px,38vw,300px);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.6)}
+.sc-cards :is(img,god-card):nth-child(n+2){width:clamp(90px,24vw,170px)}
 .sc-t{font-size:20px;font-weight:800;text-align:center;color:var(--gold-soft)}
 .showcase.k-resp .sc-in{border-color:var(--danger)}.showcase.k-resp .sc-t{color:#f6b3ac}
 .showcase.k-pay .sc-t{color:var(--teal)}
@@ -155,16 +155,16 @@ body.is-drag .drophint{display:grid}
 .sheet h3{font-size:21px;margin-bottom:6px}
 .opts{display:grid;gap:8px;margin-top:12px}
 .opt{display:flex;align-items:center;gap:12px;text-align:start;background:var(--chip);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:16px;min-height:52px}
-.opt img{width:52px;border-radius:6px;flex:none}
+.opt :is(img,god-card){width:52px;border-radius:6px;flex:none}
 .opt .sub{font-size:13.5px;color:var(--muted)}
 .opt.sel{border-color:var(--gold);background:rgba(216,178,96,.15)}
 .opt[disabled]{opacity:.4}
 .sw{width:14px;height:20px;border-radius:3px;display:inline-block;flex:none}
 .cardview{display:grid;grid-template-columns:minmax(0,260px) 1fr;gap:16px;align-items:start}
-.cardview img{width:100%;border-radius:12px}
+.cardview :is(img,god-card){width:100%;border-radius:12px}
 .cardview h3{font-size:22px}
 .cardview .stack div{font-size:16.5px}
-@media(max-width:560px){.cardview{grid-template-columns:1fr;justify-items:center;text-align:center}.cardview img{width:min(260px,70vw)}}
+@media(max-width:560px){.cardview{grid-template-columns:1fr;justify-items:center;text-align:center}.cardview :is(img,god-card){width:min(260px,70vw)}}
 .toasts{position:fixed;top:calc(58px + env(safe-area-inset-top));inset-inline:0;z-index:30;display:grid;justify-items:center;gap:6px;pointer-events:none;padding-inline:16px}
 .toast{background:#0a0f20;border:1px solid var(--line);border-inline-start:4px solid var(--gold);border-radius:10px;padding:8px 14px;font-size:15px;max-width:520px;box-shadow:0 6px 18px rgba(0,0,0,.5)}
 .toast.err{border-inline-start-color:var(--danger)}.toast.good{border-inline-start-color:var(--ok)}
@@ -182,7 +182,7 @@ body.is-drag .drophint{display:grid}
 /* gallery, rules, tables */
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:14px}
 .gc{display:grid;gap:4px;font-size:14px;text-align:center;background:none;border:0;padding:0}
-.gc img{width:100%;border-radius:9px}
+.gc :is(img,god-card){width:100%;border-radius:9px}
 .gc .cnt{background:var(--bar);border-radius:6px;padding:0 8px;justify-self:center;font-variant-numeric:tabular-nums;font-size:13px}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{border:1px solid var(--line);background:var(--chip);border-radius:20px;padding:6px 14px;font-size:14px}
@@ -215,11 +215,11 @@ table.adm input{padding:6px 8px;font-size:14px}
   .seat .swatches,.seat .flags{justify-content:flex-start}
   .tcenter{top:68%}
   .deck{width:76px}.top{width:96px}
-  .grp .cards img{width:60px;margin-inline-start:-36px}
+  .grp .cards :is(img,god-card){width:60px;margin-inline-start:-36px}
   .pendwrap{display:none}
   .pend-desk{display:block}
   .sav .av{width:58px;height:58px;font-size:26px}.sn{font-size:16px}.ss{font-size:14px}
-  .grp .blds img{width:30px}
+  .grp .blds :is(img,god-card){width:30px}
   .tcenter{width:min(50%,460px)}
   .pendwrap{max-width:720px;margin-inline:auto}
 }
@@ -228,6 +228,35 @@ table.adm input{padding:6px 8px;font-size:14px}
 /* آخر حركة: تبقى ظاهرة وسط الطاولة */
 .lastplay{display:flex;align-items:center;gap:10px;background:rgba(8,12,26,.82);border:1px solid rgba(230,182,92,.4);border-radius:14px;padding:6px 10px;max-width:100%;text-align:start;color:var(--ink)}
 .lastplay.k-resp{border-color:var(--danger)}
-.lp-cards{display:flex;flex:none}.lp-cards img{width:clamp(44px,11vw,70px);border-radius:6px;margin-inline-start:-18px;box-shadow:0 3px 8px rgba(0,0,0,.5)}.lp-cards img:first-child{margin-inline-start:0}
+.lp-cards{display:flex;flex:none}.lp-cards :is(img,god-card){width:clamp(44px,11vw,70px);border-radius:6px;margin-inline-start:-18px;box-shadow:0 3px 8px rgba(0,0,0,.5)}.lp-cards :is(img,god-card):first-child{margin-inline-start:0}
 .lp-t{font-size:14px;font-weight:700;line-height:1.5;color:var(--gold-soft);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .tcenter .lastlog{display:none}
+
+/* بطاقات حزمة التصميم card-kit */
+god-card{display:block;width:100%}
+.mcard.kit{padding:0;border:0;background:none;position:relative}
+.mcard.kit .mdone{position:absolute;top:6px;inset-inline-start:6px;background:var(--ok);color:#fff;font-size:12px;padding:2px 8px;border-radius:99px}
+.mcard.kit.done god-card{outline:3px solid var(--ok);outline-offset:2px;border-radius:12px}
+
+/* اتجاه الدور */
+.dirb{display:inline-flex;align-items:center;gap:6px;flex:none;font-size:13px;color:var(--ink-2,#c9cbe0);background:rgba(216,178,96,.12);border:1px solid rgba(216,178,96,.35);border-radius:99px;padding:3px 10px 3px 8px;white-space:nowrap}
+.dirb b{color:var(--gold-soft)}
+.dirico{width:20px;height:20px;color:var(--gold-soft);flex:none}
+.felt .feltdir{position:absolute;width:min(46%,260px);aspect-ratio:1;left:50%;top:50%;translate:-50% -50%;color:rgba(230,182,92,.10);pointer-events:none}
+.seat.next{border-color:rgba(216,178,96,.6);border-style:dashed}
+.nexttag{font-size:11px;font-weight:800;color:#1b1f33;background:var(--gold-soft);border-radius:99px;padding:0 8px;line-height:18px}
+@media(max-width:560px){.dirt{display:none}.dirb{padding:3px 6px}}
+
+/* أوراق مكشوفة (إكشف الورق / خلك مزهرية): شبكة واضحة بدون تراكب */
+.peekgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;margin-block:8px 4px}
+.peekgrid .pk{all:unset;cursor:pointer;display:block;border-radius:10px;transition:outline-color .1s}
+.peekgrid .pk:hover,.peekgrid .pk:focus-visible{outline:3px solid var(--gold-soft);outline-offset:2px}
+.peekgrid .pk god-card,.peekgrid .pk img{width:100%;display:block}
+@media(min-width:700px){.peekgrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}}
+
+/* ساحتك الخاصة كهدف سحب للأراضي والفلوس */
+.mezone{position:relative}
+.myhint{position:absolute;inset:2px;border-radius:14px;border:3px dashed var(--gold-soft);display:none;place-items:center;font-weight:800;font-size:17px;color:var(--gold-soft);background:rgba(216,178,96,.08);z-index:6;pointer-events:none}
+body.drag-own .myhint{display:grid}
+.mezone.over .myhint{background:rgba(216,178,96,.24);color:#fff}
+god-card.ghost{position:fixed;left:0;top:0;z-index:50;pointer-events:none}
