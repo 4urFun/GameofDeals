@@ -1,4 +1,4 @@
-const E=require('../js/engine.js');
+const E=require("../js/engine.js");
 let games=0,errs=0,wins=0,turnsTot=0;
 function clone(o){return JSON.parse(JSON.stringify(o));}
 for(let g=0;g<300;g++){
@@ -19,6 +19,7 @@ for(let g=0;g<300;g++){
    let e;
    switch(pd.stage){case 'respond':e=E.act(S,a,{type:'accept'});break;case 'counter':e=E.act(S,a,{type:'pass'});break;
     case 'pay':e=E.act(S,a,{type:'pay',cards:E.autoPick(S,a,pd.pay.amount),change:rnd()<.5});break;
+    case 'lotpay':e=E.act(S,a,{type:'pay',cards:E.autoPick(S,a,pd.pay.amount).filter(i=>S.P[a].bank.includes(i))});break;
     case 'choose':e=E.act(S,a,{type:'choose',land:E.looseLands(S.P[pd.queue[0]])[0]});break;
     case 'retarget':{const x=ids.find(x=>x!==pd.from&&!(pd.excl||[]).includes(x));e=E.act(S,a,{type:'retarget',t:x});break;}
     case 'reselect':{const t=pd.queue[0];const o=E.selOptions(S,pd.a,pd.from,t);e=E.act(S,a,{type:'reselect',sel:o[0],mine:pd.a==='swapset'?E.completeColors(S.P[pd.from])[0]:pd.a==='atni'?E.looseLands(S.P[pd.from])[0]:undefined});if(e)e=E.act(S,a,{type:'giveup'});break;}
