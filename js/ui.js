@@ -88,7 +88,7 @@ async function startHost(c,S,quiet){
  else{try{peer=await openPeer(PFX+c);}catch(e){if(!quiet)toast(e&&e.type==='unavailable-id'?'رمز الغرفة مستخدم، جرّب مرة أخرى':'تعذّر الاتصال بخادم الربط. تأكد من الإنترنت.','err');return false;}}
  isHost=true;code=c;G=S;conns={};fbConns={};if(NET.mode==='peer')hostWire();else fbHostListen(c);keepAwake(true);chatMsgs=LS.get('chat_'+c,[]);LS.set('room',c);LS.set('role','host');LS.set('host_'+c,S);setOnline();view=G.status==='lobby'?'lobby':'table';prevLogLen=-1;onGame(null,G);return true;}
 function onHostMsg(conn,msg){if(!msg||typeof msg!=='object')return;
- if(msg.t==='hello'){const u=String(msg.u||'').slice(0,24),name=String(msg.name||'لاعب').trim().slice(0,18)||'لاعب';if(!u||u===uid){conn.send({t:'err',m:'لا يمكن الانضمام من نفس الجهاز والمتصفح'});setTimeout(()=>conn.close(),400);return;}
+ if(msg.t==='hello'){const u=String(msg.u||'').slice(0,64),name=String(msg.name||'لاعب').trim().slice(0,18)||'لاعب';if(!u||u===uid){conn.send({t:'err',m:'لا يمكن الانضمام من نفس الجهاز والمتصفح'});setTimeout(()=>conn.close(),400);return;}
   if(conn.authUid&&u!==conn.authUid){conn.send({t:'err',m:'هوية غير صحيحة'});setTimeout(()=>conn.close(),400);return;}const known=G.players.some(p=>p.id===u);
   if(!known){if(G.status!=='lobby'){conn.send({t:'err',m:'المباراة في هذه الغرفة بدأت بالفعل'});setTimeout(()=>conn.close(),400);return;}const e=hostApply(u,{type:'join',name});if(e){conn.send({t:'err',m:e});setTimeout(()=>conn.close(),400);return;}}
   if(conns[u]&&conns[u]!==conn)try{conns[u].close();}catch(e){}conn.u=u;conns[u]=conn;setOnline();sysChat(`${pname(u)} ${known?'رجع للغرفة':'انضم'}`);conn.send({t:'welcome'});broadcast();conn.send({t:'chat',m:chatMsgs});render();return;}
