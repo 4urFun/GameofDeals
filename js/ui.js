@@ -331,17 +331,16 @@ const SEATS={1:[[50,2]],2:[[87,30],[13,30]],3:[[87,36],[50,2],[13,36]],4:[[87,44
 function nextOf(S){const o=S.order;const k=o.indexOf(S.turn.p);return o[(k+(S.dir||1)+o.length)%o.length];}
 // سهم دائري: الاتجاه 1 = عكس عقارب الساعة على الطاولة (من مقعدك إلى يمينك)، -1 = مع عقارب الساعة
 function dirSvg(S,cls){const ccw=(S.dir||1)>0;return `<svg class="${cls}" viewBox="0 0 100 100" aria-hidden="true" style="${ccw?'transform:scaleX(-1)':''}"><path d="M50 12a38 38 0 1 1-33.6 20.2" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"/><path d="M6 20l12 15 15-11" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;}
+function pipsV(n,w){w=Math.max(1,Math.min(12,w|0));return `<span class="pips" title="المجموعات المكتملة: ${n} من ${w}" aria-label="${n} من ${w}">${Array.from({length:w},(_,k)=>`<i class="${k<n?'on':''}"></i>`).join('')}</span>`;}
+const SEATS_D={1:[[50,-6]],2:[[86,50],[14,50]],3:[[88,55],[50,-8],[12,55]],4:[[88,55],[64,-8],[36,-8],[12,55]],5:[[88,55],[72,-8],[50,-10],[28,-8],[12,55]]};
 function seatOrder(S){const o=S.order,k=o.indexOf(uid);if(k<0)return o.slice();const r=[];for(let j=1;j<o.length;j++)r.push(o[(k+j)%o.length]);return r;}
 function seatV(u,pos){const S=G,p=S.P[u],st=p.st;const flags=[];if(st.jail>0)flags.push('سجن '+st.jail);if(st.nap>0)flags.push('غفوة');if(st.ebla>0)flags.push('حركة ×'+st.ebla);if(st.tactic>0)flags.push('حركة واحدة');if(st.estq>0)flags.push('سحب ×'+st.estq);if(st.barrier>S.tc)flags.push('حاجز');if(st.open>S.tc)flags.push('مكشوف');if(S.hack&&S.hack.of===u)flags.push('مخترق');
  const tgt=S.pending&&S.pending.queue[0]===u&&S.pending.stage!=='bid';const si=E.setInfo(p);
  const isNext=S.status==='playing'&&nextOf(S)===u&&S.turn.p!==u;
- return `<button class="seat ${S.turn.p===u?'turn':''} ${isNext?'next':''} ${tgt?'tgt':''}" style="left:${pos[0]}%;top:${pos[1]}%" data-pod="${esc(u)}" aria-label="${esc(pname(u))}">
- <span class="sav">${av(u)}<span class="on ${online.has(u)?'y':''}"></span></span>
- <span class="sn">${esc(pname(u))}</span>${isNext?'<span class="nexttag">التالي</span>':''}
- <span class="ss"><span class="mini-back"></span><b>${p.hand.length}</b><span class="sep"></span>🏆<b>${E.score(p)}</b>/${S.cfg.winSets}</span>
- <span class="ss">🏦 <b>${E.bankMoney(p)}M</b>${E.hasVisa(p)?' + فيزا':''}</span>
- <span class="swatches">${Object.keys(si).map(c=>`<span class="swc ${si[c].sets?'full':''}" style="--c:${COLORS[c].hex}">${si[c].n}</span>`).join('')}</span>
- ${flags.length?`<span class="flags">${flags.map(f=>`<span class="flag">${f}</span>`).join('')}</span>`:''}</button>`;}
+ return `<button class="seat ${S.turn.p===u?'turn':''} ${isNext?'next':''} ${tgt?'tgt':''}" style="left:${pos[0]}%;top:${pos[1]}%" data-side="${pos[1]>20?1:0}" data-pod="${esc(u)}" aria-label="${esc(pname(u))}">
+ <span class="seat-top"><span class="sav">${av(u)}<span class="on ${online.has(u)?'y':''}"></span></span><span class="seat-id"><span class="sn">${esc(pname(u))}</span>${isNext?'<span class="nexttag">التالي</span>':''}<span class="seat-stats"><span class="st" title="عدد الأوراق"><span class="mini-back"></span><b>${p.hand.length}</b></span><span class="st" title="البنك">🏦 <b>${E.bankMoney(p)}M</b>${E.hasVisa(p)?'<span class="visa-s">+فيزا</span>':''}</span></span></span></span>
+ ${pipsV(E.score(p),S.cfg.winSets)}
+ <span class="seat-tags">${Object.keys(si).map(c=>`<span class="swc ${si[c].sets?'full':''}" style="--c:${COLORS[c].hex}" title="${COLORS[c].n}">${si[c].n}</span>`).join('')}${flags.map(f=>`<span class="flag">${f}</span>`).join('')}</span></button>`;}
 function fieldV(u){const p=G.P[u];const si=E.setInfo(p);const cols=Object.keys(si);if(!cols.length)return `<div class="muted small empty-field">لا توجد أراضٍ بعد</div>`;
  // كل مجموعة مكتملة في خانة مستقلة، والأراضي الزائدة من نفس اللون تبدأ خانة جديدة
  const landTag=i=>kimg(img(i),` alt="${esc(E.C(i).n)}" data-land="${esc(i)}" data-lo="${esc(u)}"`);
@@ -352,7 +351,7 @@ function fieldV(u){const p=G.P[u];const si=E.setInfo(p);const cols=Object.keys(s
 let selCard=null;
 function tableV(){const S=G;if(!S.P||(!S.P[uid]&&S.status!=='ended'))return `<div class="page"><div class="wrap narrow empty-st">أنت لست لاعباً في هذه المباراة. <button class="btn sm" data-go="leave">رجوع</button></div></div>`;
  if(S.status==='ended')return resultV();
- const T_=S.turn;const myT=T_.ctrl===uid;const hu=viewHandOwner();const hp=S.P[hu];const left=E.movesLeft(S);const opp=seatOrder(S);const pos=SEATS[opp.length]||SEATS[5];
+ const T_=S.turn;const myT=T_.ctrl===uid;const hu=viewHandOwner();const hp=S.P[hu];const left=E.movesLeft(S);const opp=seatOrder(S);const pos=((innerWidth>=960?SEATS_D:SEATS)[opp.length])||SEATS[5];
  const hand=hp.hand.slice().sort((a,b)=>order(a)-order(b));const hacked=hu!==uid;const top=S.discard.length?S.discard[S.discard.length-1]:null;const lg=S.log[S.log.length-1];
  const canDraw=myT&&T_.phase==='draw';if(selCard&&!hand.includes(selCard))selCard=null;const meP=S.P[uid];
  const turnTxt=T_.p===uid&&T_.ctrl===uid?'<b class="gold-t">دورك</b>':`دور <b class="gold-t">${esc(pname(T_.p))}</b>${T_.ctrl!==T_.p?` <span class="muted">(يلعبه ${esc(pname(T_.ctrl))})</span>`:''}`;
@@ -360,14 +359,14 @@ function tableV(){const S=G;if(!S.P||(!S.P[uid]&&S.status!=='ended'))return `<di
  return `<div class="game"><header class="topbar"><div class="turnb">${turnTxt}${moves}</div><span class="dirb" title="اتجاه الدور" aria-label="اتجاه الدور، التالي ${esc(pname(nextOf(S)))}">${dirSvg(S,'dirico')}<span class="dirt">التالي: <b>${nextOf(S)===uid?'أنت':esc(pname(nextOf(S)))}</b></span></span><span class="code-s">${esc(S.code)}</span>
  <button class="icon-btn mobile-only" data-go="log">السجل</button><button class="icon-btn mobile-only" data-go="chat">المحادثة${chatMsgs.length>chatSeen?`<span class="badge">${chatMsgs.length-chatSeen}</span>`:''}</button><button class="icon-btn" data-go="menu" aria-label="القائمة">☰</button></header>
  <div class="gbody"><main class="tablecol">
- <div class="table-area" id="dropzone"><div class="felt">${dirSvg(S,'feltdir')}<span class="wm">GAME OF DEALS</span></div><div class="drophint">ارمِ الأمر هنا</div>${opp.map((u,k)=>seatV(u,pos[k])).join('')}
+ <div class="table-area ${opp.length>=2?'many':''} opp${opp.length}" id="dropzone"><div class="dirline">${dirSvg(S,'dirico')}<span>التالي: <b>${nextOf(S)===uid?'أنت':esc(pname(nextOf(S)))}</b></span></div><div class="felt">${dirSvg(S,'feltdir')}<span class="wm">GAME OF DEALS</span></div><div class="drophint">ارمِ الأمر هنا</div>${opp.map((u,k)=>seatV(u,pos[k])).join('')}
   <div class="tcenter"><div class="piles"><button class="deck ${canDraw?'can':''}" data-go="draw" aria-label="كومة السحب"><span class="n">${S.deck.length}</span></button>${top?`<button class="top" data-card="${esc(top)}" aria-label="آخر بطاقة: ${esc(E.C(top).n)}">${kimg(img(top),` alt=""`)}<span class="n">محروقة ${S.discard.length}</span></button>`:`<div class="top empty"></div>`}</div>
   ${lastPlayV(S)}${S.pending?`<div class="pend-desk">${pendingV()}</div>`:`<div class="lastlog">${lg?esc(lg.m):''}</div>`}</div></div>
  ${S.pending?`<div class="pendwrap">${pendingV()}</div>`:''}
  ${myT&&T_.phase==='jail'?jailV():''}
- <section class="mezone" id="myzone"><div class="myhint" id="myhint">ارمها هنا</div><div class="mebar">${av(uid)}<b class="grow">${esc(pname(uid))}</b><span>🏆 <b>${E.score(meP)}</b>/${S.cfg.winSets}</span><span>🏦 <b>${E.bankMoney(meP)}M</b>${E.hasVisa(meP)?' + فيزا':''}</span><button class="btn sm" data-go="mymiss">مهماتي (${meP.miss.filter(m=>m.done).length}/${meP.miss.length})</button></div>
- <div class="field-area">${fieldV(uid)}</div>
- ${meP.bank.length?`<div class="bank">${meP.bank.map(i=>E.T(i)==='visa'?`<span class="coin visa">VISA</span>`:`<span class="coin">${E.C(i).v}M</span>`).join('')}</div>`:''}
+ <section class="mezone" id="myzone"><div class="myhint" id="myhint">ارمها هنا</div><div class="mebar">${av(uid)}<b class="grow">${esc(pname(uid))}</b>${pipsV(E.score(meP),S.cfg.winSets)}<span class="bankchip">🏦 <b>${E.bankMoney(meP)}M</b>${E.hasVisa(meP)?' + فيزا':''}</span><button class="btn sm" data-go="mymiss">مهماتي (${meP.miss.filter(m=>m.done).length}/${meP.miss.length})</button></div>
+ <div class="board"><div class="board-lands"><div class="board-h">أراضيك</div><div class="field-area">${fieldV(uid)}</div></div>
+ <div class="board-bank"><div class="board-h">البنك <b>${E.bankMoney(meP)}M</b></div><div class="bank">${meP.bank.length?meP.bank.map(i=>E.T(i)==='visa'?`<span class="coin visa">VISA</span>`:`<span class="coin">${E.C(i).v}M</span>`).join(''):'<span class="bank-empty">اسحب الفلوس هنا</span>'}</div></div></div>
  ${hacked?`<div class="note warn">أنت تلعب دور ${esc(pname(hu))} الآن (HACKER). أي أمر تلعبه يكون لصالحه.</div>`:''}</section>
  <section class="handzone"><div class="actbar"><span class="info">${hacked?'يد '+esc(pname(hu))+' • ':''}${hand.length} بطاقة${myT&&T_.phase==='play'?` • ${T_.unl?'حركات مفتوحة':'متبقي '+left+' حركات'}`:''}</span><span class="row">${canDraw?`<button class="btn gold" data-go="draw">اسحب ${E.drawCountFor(S,T_.p)}</button>`:''}${myT&&T_.phase==='play'&&!S.pending?`<button class="btn" data-go="end">أنهِ الدور</button>`:''}</span></div>
  <div class="hand" id="hand">${hand.map(i=>{const resp=S.pending&&E.C(i).a&&E.respOK(S,S.pending,uid,E.C(i).a)&&hu===uid;return `<button class="hc ${resp?'resp':''}" data-hc="${esc(i)}" aria-label="${esc(E.C(i).n)}">${kimg(img(i),` alt="" draggable="false"`)}</button>`;}).join('')||'<span class="muted">لا توجد بطاقات</span>'}</div>
@@ -377,7 +376,7 @@ function layoutHand(){const box=$('#hand');if(!box)return;const cards=[...box.qu
  const desk=window.innerWidth>=960;const cw=Math.round(desk?Math.min(205,window.innerHeight*0.27*400/597):Math.max(96,Math.min(170,W*0.38,window.innerHeight*0.30*400/597)));
  const ch=cw*597/400;box.style.height=Math.round(ch+18)+'px';const Wu=W-16;const step=n>1?Math.min(cw*0.86,(Wu-cw)/(n-1)):0;const total=cw+step*(n-1);const start=(W-total)/2;const mid=(n-1)/2;const ang=Math.min(2.2,14/n);
  cards.forEach((c,k)=>{const off=k-mid;c.style.width=cw+'px';c.style.right=(start+step*k)+'px';c.style.zIndex=10+k;c.style.setProperty('--t',`translateY(${(Math.abs(off)*Math.abs(off)*0.7).toFixed(1)}px) rotate(${(off*ang).toFixed(2)}deg)`);});}
-window.addEventListener('resize',()=>{if(view==='table')layoutHand();});
+let wideNow=innerWidth>=960;window.addEventListener('resize',()=>{if(view==='table'){const w=innerWidth>=960;if(w!==wideNow){wideNow=w;render();}else layoutHand();}});
 function lastPlayV(S){const ev=(S.evs||[]).slice(-1)[0];if(!ev)return '';return `<button class="lastplay k-${ev.k}" data-card="${esc(ev.c[0])}" aria-label="آخر حركة"><span class="lp-cards">${ev.c.slice(0,3).map(i=>`${kimg(img(i),` alt=""`)}`).join('')}</span><span class="lp-t">${esc(ev.t)}</span></button>`;}
 function onHandTap(id){cardModal(id,'hand');}
 // السحب والرمي على الطاولة
