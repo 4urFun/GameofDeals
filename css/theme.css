@@ -1,0 +1,260 @@
+/* Game of Deals — ثيم «الطاولة الملكية» (بيئة اللعب فقط، بدون أي تغيير على تصميم البطاقات)
+   ليلي بنفسجي عميق + إطار ذهبي للطاولة + ألواح لاعبين زجاجية + بنك بعملات ذهبية */
+:root{
+  --bg:#0d0b1f; --bg2:#141130; --board:#221c47; --board2:#2c2459; --panel:#19153a; --panel2:#231e4a; --bar:#0b0a1a;
+  --ink:#f1eefb; --muted:#aea8cc; --line:rgba(241,238,251,.11); --chip:rgba(5,4,18,.38);
+  --gold:#e8c170; --gold-ink:#2a1c05; --gold-soft:#f4d58d; --teal:#5fd0c0; --danger:#ef7f76; --ok:#72d3a1;
+  --rim1:#3b2816; --rim2:#c9a35a; --rim3:#5a3f17;
+}
+body{background:
+  radial-gradient(1100px 620px at 50% 26%,#221d4a 0,rgba(34,29,74,0) 70%),
+  radial-gradient(800px 500px at 100% 100%,rgba(232,193,112,.06),transparent 70%),
+  var(--bg) fixed}
+
+/* الشريط العلوي */
+.topbar{background:linear-gradient(180deg,#15123a,#0c0a1e);border-bottom:1px solid rgba(232,193,112,.35);box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.turnb{font-size:17px}
+.moves i{width:14px;height:14px;background:radial-gradient(circle at 35% 30%,#fff3c4,#e8c170 50%,#a87a2a);box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+.moves i.u{background:transparent;border:2px solid rgba(232,193,112,.4);box-shadow:none}
+.dirb{background:rgba(232,193,112,.1);border-color:rgba(232,193,112,.45)}
+
+/* الطاولة: إطار خشبي بحافة ذهبية وقماش بنفسجي مضاء من الوسط */
+.felt{inset:46px 2.5% 12px;border-radius:220px;
+  background:
+    radial-gradient(ellipse 55% 60% at 50% 55%,rgba(255,226,160,.10),transparent 70%),
+    repeating-radial-gradient(circle at 50% 50%,rgba(255,255,255,.018) 0 1px,transparent 1px 4px),
+    radial-gradient(ellipse at 50% 45%,#3b2e72 0,#2a2156 45%,#1a1538 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,220,150,.22),
+    inset 0 14px 60px rgba(0,0,0,.55),
+    inset 0 -10px 40px rgba(0,0,0,.35),
+    0 0 0 9px var(--rim1),
+    0 0 0 11px var(--rim2),
+    0 0 0 13px var(--rim3),
+    0 24px 60px rgba(0,0,0,.65)}
+.felt::after{content:"";position:absolute;inset:16px;border-radius:inherit;border:1px dashed rgba(232,193,112,.22);pointer-events:none}
+.felt .wm{font-family:var(--display);color:rgba(232,193,112,.09);letter-spacing:8px}
+.felt .feltdir{display:none}
+.drophint{inset:46px 2.5% 12px;border-radius:220px;border-color:var(--teal)}
+
+/* الوسط: بساط دائري للسحب والمحروقة + سهم اتجاه الدور حوله */
+.mat{position:absolute;left:50%;top:50%;translate:-50% -50%;width:min(320px,92%);aspect-ratio:1;border-radius:50%;z-index:-1;pointer-events:none;
+  background:radial-gradient(circle,rgba(232,193,112,.13) 0,rgba(232,193,112,.04) 52%,transparent 68%)}
+.mat svg{width:100%;height:100%;color:rgba(232,193,112,.30)}
+.deck{border-radius:10px;box-shadow:2px 2px 0 #0b0a1a,4px 4px 0 #2a2256,6px 6px 0 #0b0a1a,8px 8px 0 #2a2256,0 16px 26px rgba(0,0,0,.55)}
+.deck.can{box-shadow:0 0 0 3px var(--gold),0 0 26px rgba(232,193,112,.55),4px 4px 0 #2a2256,0 16px 26px rgba(0,0,0,.55)}
+.top.empty{border:2px dashed rgba(232,193,112,.3);background:rgba(0,0,0,.15)}
+.deck .n,.top .n{background:#0b0a1a;border:1px solid rgba(232,193,112,.35);color:var(--gold-soft);font-weight:700}
+.lastplay{background:linear-gradient(180deg,rgba(24,20,52,.94),rgba(12,10,28,.94));border:1px solid rgba(232,193,112,.5);box-shadow:0 10px 26px rgba(0,0,0,.5)}
+
+/* مقاعد اللاعبين: ألواح زجاجية بحافة ذهبية */
+.seat{background:linear-gradient(180deg,rgba(44,37,88,.96),rgba(19,16,42,.96));border:1px solid rgba(232,193,112,.2);border-top:3px solid rgba(232,193,112,.5);border-radius:16px;box-shadow:0 12px 26px rgba(0,0,0,.5)}
+.seat.turn{border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,193,112,.35),0 0 30px rgba(232,193,112,.35),0 12px 26px rgba(0,0,0,.5)}
+.seat.turn::before{content:"دوره";position:absolute;top:-12px;inset-inline-start:12px;background:linear-gradient(#f4d58d,#d6a748);color:#2a1c05;font-size:11px;font-weight:800;border-radius:99px;padding:0 10px;line-height:20px}
+.seat.next{border-style:solid;border-color:rgba(232,193,112,.35);border-top-style:dashed}
+.seat.tgt{border-color:var(--danger);box-shadow:0 0 0 3px rgba(239,127,118,.35),0 12px 26px rgba(0,0,0,.5)}
+.sav .av{box-shadow:0 0 0 3px #15123a,0 0 0 5px rgba(232,193,112,.55)}
+.seat.turn .sav .av{box-shadow:0 0 0 3px #15123a,0 0 0 5px var(--gold),0 0 18px rgba(232,193,112,.6)}
+.sav .on{border-color:#15123a}
+
+/* شريط تقدّم المجموعات (المطلوب للفوز) */
+.pips{display:flex;gap:3px;align-items:center}
+.pips i{width:12px;height:7px;border-radius:4px;background:rgba(255,255,255,.14);display:block}
+.pips i.on{background:linear-gradient(#f7dfa0,#c99a3e);box-shadow:0 0 6px rgba(232,193,112,.5)}
+.mebar .pips i{width:16px;height:9px}
+
+/* لوحتك: ساحة الأراضي + البنك */
+.mezone{margin:14px max(12px,env(safe-area-inset-left)) 0 max(12px,env(safe-area-inset-right));padding:10px 14px 12px;background:linear-gradient(180deg,rgba(38,32,78,.92),rgba(20,17,44,.92));border:1px solid rgba(232,193,112,.22);border-top:3px solid rgba(232,193,112,.45);border-radius:18px;box-shadow:0 14px 30px rgba(0,0,0,.45)}
+.mebar{gap:12px}
+.mebar .av{box-shadow:0 0 0 2px #15123a,0 0 0 4px rgba(232,193,112,.55)}
+.mebar b.grow{font-size:17px}
+.bankchip{display:inline-flex;align-items:center;gap:6px;background:rgba(232,193,112,.12);border:1px solid rgba(232,193,112,.4);border-radius:99px;padding:2px 12px 2px 8px;font-variant-numeric:tabular-nums}
+.bankchip b{color:var(--gold-soft)}
+.board{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.board-h{font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.board-h b{color:var(--gold-soft);font-size:14px}
+.board-lands,.board-bank{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:8px 10px}
+.field-area{min-height:88px}
+.empty-field{display:grid;place-items:center;width:100%;min-height:80px;border:2px dashed rgba(232,193,112,.22);border-radius:12px;color:var(--muted)}
+.grp{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.grp.full{border:2px solid var(--gold);background:rgba(232,193,112,.08);box-shadow:0 0 16px rgba(232,193,112,.18)}
+.bank{gap:8px;min-height:48px;align-items:center}
+.bank-empty{color:var(--muted);font-size:13px}
+.coin{width:46px;height:46px;padding:0;border-radius:50%;display:grid;place-items:center;font-size:14px;color:#3a2607;
+  background:radial-gradient(circle at 35% 30%,#fff6d2 0,#f0cf7e 38%,#c99a3e 72%,#8e6420 100%);
+  border:2px solid #f7dc95;box-shadow:inset 0 -3px 0 rgba(0,0,0,.22),inset 0 2px 0 rgba(255,255,255,.4),0 4px 8px rgba(0,0,0,.45)}
+.coin.visa{width:auto;min-width:64px;height:40px;border-radius:8px;padding:0 10px;color:#fff;border:1px solid #b3a3ff;background:linear-gradient(135deg,#7b62e0,#3d2c8f);font-size:13px;letter-spacing:1px}
+
+/* اليد: رف مضاء تحت البطاقات */
+.handzone{background:linear-gradient(180deg,rgba(13,11,31,0),var(--bg) 26px)}
+.hand::before{content:"";position:absolute;inset-inline:4%;bottom:-6px;height:60px;border-radius:50%;background:radial-gradient(ellipse at 50% 100%,rgba(232,193,112,.2),transparent 70%);pointer-events:none}
+.actbar .info{color:var(--muted)}
+.actbar [data-go=end]{background:linear-gradient(180deg,#f4d58d,#d29e43);color:#2a1c05;border:0;font-weight:800;padding:10px 22px;border-radius:12px;box-shadow:0 6px 14px rgba(0,0,0,.4)}
+.actbar [data-go=draw]{box-shadow:0 0 18px rgba(232,193,112,.5)}
+
+/* اللوحة الجانبية: السجل والمحادثة */
+.side{background:linear-gradient(180deg,#141133,#0e0c24)}
+.tabs button.on{background:rgba(232,193,112,.14);color:var(--gold-soft)}
+.logl div{background:rgba(255,255,255,.035);border:0;border-inline-start:3px solid rgba(232,193,112,.3);border-radius:10px;padding:7px 10px}
+.logl .good{border-inline-start-color:var(--ok)}.logl .bad{border-inline-start-color:var(--danger)}
+
+/* الأزرار واللوحات العامة */
+.panel,.sheet{background:linear-gradient(180deg,#221d48,#17143a);border-color:rgba(232,193,112,.2)}
+.btn.gold{background:linear-gradient(180deg,#f4d58d,#d29e43);color:#2a1c05}
+
+@media(min-width:960px){
+  .board{grid-template-columns:minmax(0,1fr) minmax(220px,300px)}
+  .deck{width:96px}.top{width:118px}
+  .tcenter{top:60%}
+}
+@media(max-width:560px){
+  .felt,.drophint{border-radius:120px}
+  .coin{width:40px;height:40px;font-size:13px}
+  .mezone{padding:8px 10px}
+}
+
+/* ضبط المساحات على الكمبيوتر: الطاولة أكبر ولوحتك أنحف */
+@media(min-width:960px){
+  .table-area{min-height:360px}
+  .tcenter{top:63%}
+  .mat{width:min(250px,80%)}
+  .mezone{padding:8px 12px 10px;margin-top:16px}
+  .board-lands,.board-bank{padding:6px 10px}
+  .board-h{margin-bottom:2px}
+  .field-area{min-height:70px}
+  .empty-field{min-height:64px}
+  .coin{width:42px;height:42px}
+  .handzone{padding-top:0}
+}
+@media(min-width:960px){
+  .board-h{display:none}
+  .mezone{margin-top:12px;gap:6px}
+  .table-area{min-height:340px}
+  .board{grid-template-columns:minmax(0,1fr) minmax(200px,260px)}
+}
+
+/* مقاعد الخصوم: خط وأيقونات أكبر ومساحة أقل فراغاً */
+.seat{gap:3px;padding:8px 8px 9px}
+.sn{font-size:16px}
+.ss{font-size:15px;gap:5px}.ss b{font-size:16px}
+.mini-back{width:13px;height:19px;border-radius:3px}
+.seat .pips i{width:12px;height:7px}
+.swc{min-width:19px;height:19px;line-height:19px;font-size:12.5px;border-radius:5px}
+.swatches{max-height:21px;gap:3px}
+@media(min-width:960px){
+  .seat{width:200px;padding:10px 12px 11px;column-gap:12px;row-gap:3px}
+  .sav .av{width:62px;height:62px;font-size:28px}
+  .sn{font-size:20px}
+  .ss{font-size:18px;gap:6px}.ss b{font-size:19px}
+  .mini-back{width:15px;height:22px}
+  .seat .pips i{width:17px;height:8px}
+  .swc{min-width:22px;height:22px;line-height:22px;font-size:14px}
+  .swatches{max-height:24px}
+}
+
+/* الكمبيوتر: المقاعد العلوية على حافة الطاولة */
+@media(min-width:960px){
+  .table-area{margin-top:36px}
+  .table-area.many .seat{width:186px}
+  .table-area.many .sav .av{width:54px;height:54px;font-size:24px}
+  .tcenter{top:58%}
+}
+/* الجوال مع 4 خصوم أو أكثر: المقاعد صفين مرتبين فوق الطاولة بدل ما تتراكب */
+@media(max-width:959px){
+  .table-area.many{height:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 6px;align-content:start;padding-top:2px}
+  .table-area.many .seat{position:static;transform:none;width:auto;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);justify-items:start;text-align:start;column-gap:6px;row-gap:1px;padding:6px 7px 7px}
+  .table-area.many .seat .sav{grid-row:1 / span 4;align-self:center}
+  .table-area.many .sav .av{width:34px;height:34px;font-size:16px}
+  .table-area.many .sn{font-size:13.5px}
+  .table-area.many .ss{font-size:13px;gap:3px}.table-area.many .ss b{font-size:13.5px}
+  .table-area.many .mini-back{width:10px;height:15px}
+  .table-area.many .seat .pips i{width:8px;height:5px}
+  .table-area.many .swatches{display:none}
+  .table-area.many .nexttag{font-size:10px;line-height:15px;padding:0 6px}
+  .table-area.many .seat.turn::before{top:-10px;font-size:10px;line-height:16px}
+  .table-area.many .felt{position:relative;inset:auto;grid-column:1 / -1;grid-row:3;height:250px;margin:14px 10px 12px;border-radius:120px}
+  .table-area.many .tcenter{position:relative;left:auto;top:auto;transform:none;grid-column:1 / -1;grid-row:3;align-self:center;justify-self:center;width:90%}
+  .table-area.many .drophint{inset:auto;grid-column:1 / -1;grid-row:3;height:250px;margin:14px 10px 12px;position:relative}
+}
+@media(min-width:960px){.table-area.many .tcenter{top:64%}.table-area.many .mat{width:min(220px,70%)}}
+@media(min-width:960px){.tcenter{top:65%}.mat{width:min(220px,70%)}}
+
+/* ===== مقعد الخصم: كل العناصر داخل الصندوق مهما كثرت ===== */
+.table-area .seat{display:flex;flex-direction:column;align-items:stretch;gap:6px;text-align:start;padding:8px 9px 9px;overflow:hidden}
+.seat-top{display:flex;align-items:center;gap:8px;min-width:0}
+.seat-id{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;flex:1 1 auto}
+.table-area .seat .sn{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+.seat-stats{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.seat-stats .st{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.seat-stats b{color:var(--ink)}
+.visa-s{font-size:.8em;color:#c9bbff;font-weight:700}
+.table-area .seat .pips{width:100%;display:flex;gap:3px}
+.table-area .seat .pips i{flex:1 1 0;min-width:4px;height:7px}
+.table-area .seat .swatches{max-height:none;flex-wrap:wrap;justify-content:flex-start;gap:3px}
+.table-area .seat .flags{justify-content:flex-start}
+.table-area .seat .flags .flag{font-size:11px}
+.table-area .seat .sav{grid-row:auto}
+
+/* الجوال (مقاعد حول الطاولة): الصورة فوق والاسم تحتها بالوسط */
+@media(max-width:959px){
+  .table-area:not(.many) .seat{width:108px;align-items:stretch}
+  .table-area:not(.many) .seat-top{flex-direction:column;gap:4px}
+  .table-area:not(.many) .seat-id{align-items:center;width:100%}
+  .table-area:not(.many) .seat-stats{justify-content:center;font-size:13px;gap:0 8px}
+  .table-area:not(.many) .seat .sn{font-size:14px;text-align:center}
+  .table-area:not(.many) .seat .swatches,.table-area:not(.many) .seat .flags{justify-content:center}
+  .table-area .swc{min-width:17px;height:17px;line-height:17px;font-size:11px}
+  .table-area.many .seat{padding:6px 7px 7px;gap:4px}
+  .table-area.many .seat-top{gap:6px}
+  .table-area.many .seat-stats{font-size:12.5px;gap:0 6px}
+}
+/* الكمبيوتر */
+@media(min-width:960px){
+  .table-area .seat{width:212px;padding:10px 12px 11px;gap:7px}
+  .table-area.many .seat{width:196px}
+  .seat-top{gap:10px}
+  .table-area .sav .av{width:56px;height:56px;font-size:25px}
+  .table-area.many .sav .av{width:50px;height:50px;font-size:22px}
+  .table-area .seat .sn{font-size:19px}
+  .seat-stats{font-size:16px;gap:2px 12px}.seat-stats b{font-size:17px}
+  .table-area .seat .pips i{height:8px}
+  .table-area .swc{min-width:21px;height:21px;line-height:21px;font-size:13px}
+}
+/* المقاعد الجانبية على الكمبيوتر تتوسّط ارتفاع الطاولة، فلو كبر الصندوق يكبر للجهتين بدل ما ينزل على لوحتك */
+@media(min-width:960px){.table-area .seat[data-side="1"]{transform:translate(-50%,-50%)}}
+.table-area .seat .flags{gap:3px}
+/* إصلاح: مقاعد الجوال في الصفوف تستخدم نفس الهيكل المرتب */
+@media(max-width:959px){
+  .table-area.many .seat{display:flex;flex-direction:column;align-items:stretch}
+  .table-area.many .seat .sav{grid-row:auto}
+  .table-area.many.opp2,.table-area.many.opp4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .table-area.many .seat .pips i{width:auto;height:6px}
+  .table-area.many .seat .flags .flag{font-size:10.5px}
+  .table-area.many .swc{min-width:16px;height:16px;line-height:16px;font-size:10.5px}
+}
+@media(min-width:960px){.table-area.many .tcenter{top:70%}}
+/* سطر الألوان والحالات */
+.seat-tags{display:flex;flex-wrap:wrap;gap:3px;align-items:center;justify-content:flex-start;min-height:0}
+.seat-tags:empty{display:none}
+.seat-tags .flag{font-size:11px;line-height:17px;padding:0 6px;border-radius:6px;white-space:nowrap}
+@media(max-width:959px){.table-area:not(.many) .seat-tags{justify-content:center}}
+@media(min-width:960px){
+  .table-area .seat[data-side="0"]{width:250px}
+  .table-area.many.opp5 .seat[data-side="0"]{width:232px}
+  .seat-tags .flag{font-size:12px;line-height:21px}
+}
+/* اتجاه الدور: سهم صغير في الشريط العلوي فقط (خارج الطاولة) */
+.mat,.felt .feltdir{display:none}
+.dirb{gap:5px;padding:3px 9px 3px 7px}
+.dirico{width:18px;height:18px}
+/* الجوال: السهم ينتقل من الشريط العلوي إلى سطر صغير فوق الطاولة */
+.dirline{display:none}
+@media(max-width:959px){
+  .topbar .dirb{display:none}
+  .dirline{display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;color:var(--muted);grid-column:1 / -1;grid-row:3;margin-top:6px}
+  .dirline b{color:var(--gold-soft)}
+  .dirline .dirico{width:17px;height:17px;color:var(--gold-soft)}
+  .table-area:not(.many) .dirline{position:absolute;top:6px;inset-inline-start:10px;z-index:3;margin:0}
+  .table-area.many .felt,.table-area.many .tcenter,.table-area.many .drophint{grid-row:4}
+  .table-area.many .felt,.table-area.many .drophint{margin-top:8px}
+}
