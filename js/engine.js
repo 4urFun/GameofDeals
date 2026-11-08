@@ -205,11 +205,12 @@ function beginTurn(S,u){S.tc++;const p=S.P[u];S.turn={p:u,phase:'draw',moves:S.c
  if(S.turn.ctrl!==u)log(S,`💀 ${nm(S,S.turn.ctrl)} يلعب بدلاً من ${nm(S,u)} هذا الدور`,'bad');}
 function drawCountFor(S,u){const p=S.P[u];let n=p.hand.length===0?S.cfg.drawEmpty:S.cfg.draw;if(p.st.estq>0)n=1;if(S.fx.slow>S.tc||S.fx.emp>S.tc)n=1;return n;}
 function doDraw(S,u){const p=S.P[u];const n=drawCountFor(S,u);if(p.st.estq>0)p.st.estq--;draw(S,u,n);log(S,`${nm(S,u)} سحب ${n} ${n===1?'بطاقة':'بطاقات'}`);
- if(p.hand.length>S.cfg.handLimit){const ex=p.hand.length-S.cfg.handLimit;for(let k=0;k<ex;k++){const j=Math.floor(R(S)*p.hand.length);S.discard.push(p.hand.splice(j,1)[0]);}log(S,`🔥 حُرقت ${ex} بطاقة عشوائية من يد ${nm(S,u)} لتجاوز الحد (${S.cfg.handLimit})`);}
  let mv=S.cfg.moves;if(p.st.ebla>0){mv=1;p.st.ebla--;}if(p.st.tactic>0){mv=1;p.st.tactic--;}if(S.fx.fast>S.tc||S.fx.emp>S.tc)mv=1;S.turn.moves=mv;S.turn.phase='play';openDeferred(S);}
 function openDeferred(S){if(S.pending||S.status!=='playing')return;const u=S.turn.p;const k=S.deferred.findIndex(d=>d.queue[0]===u);if(k<0){if(S.turn.phase==='play'&&S.P[u].st.nap>0&&S.turn.napNow){S.P[u].st.nap--;log(S,`😴 ${nm(S,u)} أخذ الغفوة بعد التأجيل`);endTurn(S,true);}return;}
  const d=S.deferred.splice(k,1)[0];d.noLoading=true;d.dl=now()+S.cfg.timeout*1000;S.pending=d;log(S,`⏳ وصل الأمر المؤجَّل (${d.label}) إلى ${nm(S,u)}`);openTarget(S);}
-function endTurn(S,skip){const u=S.turn.p;if(S.hack&&S.hack.of===u&&!skip)S.hack=null;if(!skip&&S.turn.again){S.turn.again=false;log(S,`🔁 ${nm(S,u)} يلعب مرة أخرى`);return beginTurn(S,u);}
+// حد اليد: يُطبَّق عند نهاية الدور فقط (بعد السحب عادي يكون معك أكثر من 7)
+function trimHand(S,u){const p=S.P[u];if(p.hand.length>S.cfg.handLimit){const ex=p.hand.length-S.cfg.handLimit;for(let k=0;k<ex;k++){const j=Math.floor(R(S)*p.hand.length);S.discard.push(p.hand.splice(j,1)[0]);}log(S,`🔥 حُرقت ${ex} بطاقة عشوائية من يد ${nm(S,u)} لأنه أنهى دوره بأكثر من ${S.cfg.handLimit} أوراق`);}}
+function endTurn(S,skip){const u=S.turn.p;trimHand(S,u);if(S.hack&&S.hack.of===u&&!skip)S.hack=null;if(!skip&&S.turn.again){S.turn.again=false;log(S,`🔁 ${nm(S,u)} يلعب مرة أخرى`);return beginTurn(S,u);}
  const o=S.order;let k=o.indexOf(u);k=(k+S.dir+o.length)%o.length;beginTurn(S,o[k]);}
 function movesLeft(S){return S.turn.unl?99:S.turn.moves-S.turn.used;}
 
@@ -234,7 +235,7 @@ function openTarget(S){const pd=S.pending;while(pd&&pd.queue.length){const t=pd.
  if(pd)finishPending(S);}
 function nextTarget(S){S.pending.queue.shift();openTarget(S);}
 function finishPending(S){const pd=S.pending;S.pending=null;
- if(pd.a==='auction'&&pd.lots.length){S.pending=pd;pd.stage='bid';pd.lot=0;pd.bids={};pd.dl=now()+S.cfg.timeout*1000;log(S,`🔨 بدأ المزاد على ${pd.lots.length} أرض`);return;}
+ if(pd.a==='auction'&&pd.lots.length){S.pending=pd;pd.stage='bid';pd.lot=0;pd.bids={};pd.dl=now()+S.cfg.timeout*1000;log(S,`🔨 بدأ المزاد على ${pd.lots.length} أرض`);showLot(S);return;}
  if(pd.a==='theeb')S.P[pd.orig].st.nap+=1;
  const ev={};if(pd.a==='moab'&&pd.executed&&!pd.royal)ev.m_moab=1;if(pd.a==='nuke'&&pd.burned>0)ev.m_nuke=1;if(pd.royal&&pd.a==='nap'&&pd.executed)ev.m_rn=1;
  if(pd.stolePurple)ev.m_stealpu=1;checkMissions(S,pd.orig,ev);if(pd.stolePurple)checkMissions(S,pd.benef,{m_stealpu:1});checkWin(S);if(S.status==='playing'&&S.turn.phase==='play')openDeferred(S);}
@@ -245,6 +246,8 @@ function respOK(S,pd,who,a){const t=pd.queue[0];const isT=who===t;const pay=PAY_
  if(pd.black)return a==='takhsi'&&isT;
  if(!isT)return a==='taateel'||a==='gameover';
  if(pd.a==='auction')return ['takhsi','playaway','taateel','gameover'].includes(a);
+ // ردود «الأمر الموجه إليك»: ما تنفع ضد الأوامر الجماعية (على كل اللاعبين)
+ if(GROUP.includes(pd.a)&&['loading','left','right','asfeq','shofghairi','aks'].includes(a))return false;
  switch(a){case 'takhsi':case 'gameover':case 'playaway':case 'taateel':return true;
   case 'bordga':return true;
   case 'layikthar':return ['rent','rentwild','rentgold'].includes(pd.a);
@@ -301,7 +304,7 @@ function applyAccept(S){const pd=S.pending,t=pd.queue[0],from=pd.benef,P=S.P;pd.
  case 'auction':{const l=removeLand(P[t],s);fixBuildings(S,t);pd.lots.push({i:l.i,c:l.c,o:t});log(S,`🔨 دخلت ${cn(s)} من ${nm(S,t)} المزاد`);break;}
  }
  nextTarget(S);}
-function stageActor(S){const pd=S.pending;if(!pd)return null;const t=pd.queue[0];switch(pd.stage){case 'respond':return t;case 'counter':return pd.from;case 'pay':return pd.pay.payer;case 'choose':return t;case 'retarget':case 'reselect':return pd.from;case 'payfor':return t;}return null;}
+function stageActor(S){const pd=S.pending;if(!pd)return null;const t=pd.queue[0];switch(pd.stage){case 'respond':return t;case 'counter':return pd.from;case 'pay':case 'lotpay':return pd.pay.payer;case 'choose':return t;case 'retarget':case 'reselect':return pd.from;case 'payfor':return t;}return null;}
 
 // ---- main dispatcher
 function act(S,u,op){
@@ -324,7 +327,8 @@ function act(S,u,op){
   switch(op.type){
    case 'accept':if(pd.stage!=='respond')return 'خطأ';log(S,`${nm(S,u)} قبل ${pd.label}`);applyAccept(S);return null;
    case 'pass':if(pd.stage!=='counter')return 'خطأ';log(S,`${nm(S,pd.from)} قبل الرفض`);nextTarget(S);return null;
-   case 'pay':{if(pd.stage!=='pay')return 'خطأ';const pay=pd.pay;const e=doPay(S,pay.payer,pay.payee,op.cards||[],{amount:pay.amount,visa:op.visa,change:op.change});if(e)return e;nextTarget(S);return null;}
+   case 'pay':{if(pd.stage==='lotpay'){const pay=pd.pay;const e=doPay(S,pay.payer,pay.payee,op.cards||[],{amount:pay.amount,visa:op.visa,change:op.change});if(e)return e;finishLot(S,pay.payer);return null;}
+    if(pd.stage!=='pay')return 'خطأ';const pay=pd.pay;const e=doPay(S,pay.payer,pay.payee,op.cards||[],{amount:pay.amount,visa:op.visa,change:op.change});if(e)return e;nextTarget(S);return null;}
    case 'choose':{if(pd.stage!=='choose')return 'خطأ';const t=pd.queue[0];if(!looseLands(P[t]).includes(op.land))return 'اختر أرضاً خارج المجموعات';const l=removeLand(P[t],op.land);P[pd.benef].lands.push(l);fixBuildings(S,t);log(S,`${nm(S,t)} أعطى ${cn(op.land)} لـ ${nm(S,pd.benef)}`);nextTarget(S);return null;}
    case 'retarget':{if(pd.stage!=='retarget')return 'خطأ';if(op.t===pd.from||pd.excl.includes(op.t)||!S.order.includes(op.t))return 'اختر لاعباً آخر';pd.queue[0]=op.t;pd.sel={};log(S,`${nm(S,pd.from)} وجّه ${pd.label} إلى ${nm(S,op.t)}`);openTarget(S);return null;}
    case 'reselect':{if(pd.stage!=='reselect')return 'خطأ';const t=pd.queue[0];pd.sel[t]=op.sel;if(op.mine!=null)pd.mine=op.mine;if(!selValid(S,pd,t))return 'اختيار غير صالح';openTarget(S);return null;}
@@ -371,13 +375,18 @@ function doRespond(S,u,ci,a,op){const pd=S.pending,P=S.P,t=pd.queue[0];const han
  if(a==='payforme'){const n=op.to;if(!n||n===pd.benef||n===u||!S.order.includes(n)){P[u].hand.push(ci);S.discard.pop();return 'اختر لاعباً غير صاحب الطلب';}const amt=payAmount(S,pd,t);log(S,`🫵 ${nm(S,u)}: أقول ادفع عني يا ${nm(S,n)}`);pd.stage='pay';pd.pay={payer:n,payee:pd.benef,amount:amt};if(!payable(P[n]).length&&!hasVisa(P[n])){log(S,`${nm(S,n)} لا يملك ما يدفعه`);nextTarget(S);}return null;}
  return 'رد غير معروف';}
 function closeLot(S){const pd=S.pending,P=S.P;const lot=pd.lots[pd.lot];let best=null,amt=0;for(const u of others(S,pd.from)){const b=pd.bids[u]||0;if(b>amt){amt=b;best=u;}}
- if(best){if(hasVisa(P[best])&&amt>bankMoney(P[best]))doPay(S,best,pd.from,[],{visa:true});else{const pick=autoPick(S,best,amt).filter(i=>P[best].bank.includes(i));doPay(S,best,pd.from,pick,{amount:amt});}P[best].lands.push({i:lot.i,c:lot.c});log(S,`🔨 ${nm(S,best)} فاز بـ ${cn(lot.i)} مقابل ${amt}M`,'good');}
- else{S.discard.push(lot.i);log(S,`🔥 لم يشترِ أحد ${cn(lot.i)} فاحترقت`);}
- pd.lot++;pd.bids={};pd.dl=now()+S.cfg.timeout*1000;if(pd.lot>=pd.lots.length){S.pending=null;checkMissions(S,pd.from);checkWin(S);if(S.status==='playing')openDeferred(S);}}
+ // الفائز يختار فئات الدفع بنفسه (مرحلة lotpay)، وإذا عنده فيزا والمبلغ أكبر من بنكه تُستخدم الفيزا
+ if(best){log(S,`🔨 ${nm(S,best)} فاز بـ ${cn(lot.i)} مقابل ${amt}M`,'good');if(hasVisa(P[best])&&amt>bankMoney(P[best])){doPay(S,best,pd.from,[],{visa:true});return finishLot(S,best);}pd.stage='lotpay';pd.pay={payer:best,payee:pd.from,amount:amt};pd.dl=now()+S.cfg.timeout*1000;return;}
+ S.discard.push(lot.i);log(S,`🔥 لم يشترِ أحد ${cn(lot.i)} فاحترقت`);finishLot(S,null);}
+// عرض أرض المزاد كبيرة أمام كل اللاعبين
+function showLot(S){const pd=S.pending;if(!pd||pd.stage!=='bid')return;const lot=pd.lots[pd.lot];if(lot)shown(S,pd.from,[lot.i],'play',`🔨 مزاد (${pd.lot+1} من ${pd.lots.length}): ${cn(lot.i)}`);}
+function finishLot(S,best){const pd=S.pending,P=S.P;const lot=pd.lots[pd.lot];if(best)P[best].lands.push({i:lot.i,c:lot.c});
+ pd.stage='bid';pd.pay=null;pd.lot++;pd.bids={};pd.dl=now()+S.cfg.timeout*1000;if(pd.lot>=pd.lots.length){S.pending=null;checkMissions(S,pd.from);checkWin(S);if(S.status==='playing')openDeferred(S);}else showLot(S);}
 function doTimeout(S){const pd=S.pending;if(!pd)return 'لا يوجد ما ينتظر';if(now()<pd.dl)return 'لم تنتهِ المهلة بعد';log(S,`⌛ انتهت المهلة`);
  switch(pd.stage){case 'respond':applyAccept(S);break;case 'counter':nextTarget(S);break;case 'pay':{const pay=pd.pay;const p=S.P[pay.payer];if(hasVisa(p)&&pay.amount>bankMoney(p))doPay(S,pay.payer,pay.payee,[],{visa:true});else doPay(S,pay.payer,pay.payee,autoPick(S,pay.payer,pay.amount),{amount:pay.amount});nextTarget(S);break;}
  case 'choose':{const t=pd.queue[0];const ls=looseLands(S.P[t]).sort((a,b)=>cardVal(a)-cardVal(b));const l=removeLand(S.P[t],ls[0]);S.P[pd.benef].lands.push(l);fixBuildings(S,t);nextTarget(S);break;}
- case 'retarget':case 'reselect':nextTarget(S);break;case 'bid':for(const u of others(S,pd.from))if(pd.bids[u]==null)pd.bids[u]=0;closeLot(S);break;}return null;}
+ case 'retarget':case 'reselect':nextTarget(S);break;case 'bid':for(const u of others(S,pd.from))if(pd.bids[u]==null)pd.bids[u]=0;closeLot(S);break;
+  case 'lotpay':{const pay=pd.pay;doPay(S,pay.payer,pay.payee,autoPick(S,pay.payer,pay.amount).filter(i=>S.P[pay.payer].bank.includes(i)),{amount:pay.amount});finishLot(S,pay.payer);break;}}return null;}
 
 function playCard(S,me,ci,op){const P=S.P,p=P[me],c=C(ci),T_=S.turn;let a=c.t==='rent'?'rent':c.a;const royal=a==='royal';
  if(c.t!=='rent'&&c.t!=='action')return 'هذه البطاقة لا تُلعب كأمر';
