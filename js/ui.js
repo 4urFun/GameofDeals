@@ -305,7 +305,7 @@ function homeV(){const fan=['b_takhsi','joker','m20','gr_jarir','b_nuke'];const 
  <h1 class="logo">Game of Deals<small>الإصدار الخامس</small></h1></div>
  <div class="menu">${code&&G?`<button class="btn gold" data-go="back2game">ارجع للمباراة ${esc(code)}</button>`:''}<button class="btn gold big" data-go="create">إنشاء غرفة</button><button class="btn big" data-go="join">الانضمام إلى غرفة</button>
  ${!code&&last?`<button class="btn" data-go="rejoin">العودة إلى غرفتك ${esc(last)}</button>`:''}
- <div class="row center"><button class="btn sm" data-go="howto">طريقة اللعب</button><button class="btn sm" data-go="gallery">معرض البطاقات</button></div></div>
+ <div class="row center"><button class="btn sm" data-go="howto">طريقة اللعب</button><button class="btn sm" data-go="gallery">معرض البطاقات</button><button class="btn sm" data-go="theme">التصميم</button></div></div>
  <p class="note">أنشئ غرفة وأرسل رمزها لأصحابك، وهم يفتحون نفس رابط الموقع ويدخلون الرمز. المضيف يخلي الصفحة مفتوحة طول المباراة، وكل لاعب يشوف بطاقاته هو فقط.</p></div></div>`;}
 function nameField(){const n=playerName();return n?`<div class="field"><label>اسمك في اللعبة</label><div class="fixed-name">${esc(n)}</div></div>`:`<div class="field"><label for="nm">اسمك في اللعبة</label><input id="nm" maxlength="18" autocomplete="nickname" value="${esc(LS.get('name',''))}" placeholder="مثال: أبو فهد"></div>`;}
 function createV(){return `<div class="page"><div class="wrap narrow"><div class="panel stack"><h2>إنشاء غرفة</h2>${nameField()}
@@ -359,7 +359,7 @@ function tableV(){const S=G;if(!S.P||(!S.P[uid]&&S.status!=='ended'))return `<di
  return `<div class="game"><header class="topbar"><div class="turnb">${turnTxt}${moves}</div><span class="dirb" title="اتجاه الدور" aria-label="اتجاه الدور، التالي ${esc(pname(nextOf(S)))}">${dirSvg(S,'dirico')}<span class="dirt">التالي: <b>${nextOf(S)===uid?'أنت':esc(pname(nextOf(S)))}</b></span></span><span class="code-s">${esc(S.code)}</span>
  <button class="icon-btn mobile-only" data-go="log">السجل</button><button class="icon-btn mobile-only" data-go="chat">المحادثة${chatMsgs.length>chatSeen?`<span class="badge">${chatMsgs.length-chatSeen}</span>`:''}</button><button class="icon-btn" data-go="menu" aria-label="القائمة">☰</button></header>
  <div class="gbody"><main class="tablecol">
- <div class="table-area ${opp.length>=2?'many':''} opp${opp.length}" id="dropzone"><div class="dirline">${dirSvg(S,'dirico')}<span>التالي: <b>${nextOf(S)===uid?'أنت':esc(pname(nextOf(S)))}</b></span></div><div class="felt">${dirSvg(S,'feltdir')}<span class="wm">GAME OF DEALS</span></div><div class="drophint">ارمِ الأمر هنا</div>${opp.map((u,k)=>seatV(u,pos[k])).join('')}
+ <div class="table-area ${opp.length>=2?'many':''} opp${opp.length}" id="dropzone"><div class="dirline">${dirSvg(S,'dirico')}<span>التالي: <b>${nextOf(S)===uid?'أنت':esc(pname(nextOf(S)))}</b></span></div><div class="felt"><div class="rugx" aria-hidden="true"><div class="fringe t"></div><div class="fringe b"></div><div class="medallion"></div></div>${dirSvg(S,'feltdir')}<span class="wm">GAME OF DEALS</span></div><div class="drophint">ارمِ الأمر هنا</div>${opp.map((u,k)=>seatV(u,pos[k])).join('')}
   <div class="tcenter"><div class="piles"><button class="deck ${canDraw?'can':''}" data-go="draw" aria-label="كومة السحب"><span class="n">${S.deck.length}</span></button>${top?`<button class="top" data-card="${esc(top)}" aria-label="آخر بطاقة: ${esc(E.C(top).n)}">${kimg(img(top),` alt=""`)}<span class="n">محروقة ${S.discard.length}</span></button>`:`<div class="top empty"></div>`}</div>
   ${lastPlayV(S)}${S.pending?`<div class="pend-desk">${pendingV()}</div>`:`<div class="lastlog">${lg?esc(lg.m):''}</div>`}</div></div>
  ${S.pending?`<div class="pendwrap">${pendingV()}</div>`:''}
@@ -419,8 +419,14 @@ function resultV(){const S=G;const dur=Math.round(((S.endedAt||Date.now())-S.sta
  ${rows.map((u,k)=>`<div class="score-row"><span class="row">${k+1}. ${av(u)} ${esc(pname(u))}</span><span>${E.setsCount(S.P[u])} مجموعات + ${E.missionsDone(S.P[u])} مهام</span><span>🏦 ${E.bankMoney(S.P[u])}M</span></div>`).join('')}
  ${ACC.user?'<p class="muted small">انحفظت النتيجة في سجلك.</p>':(ACC.enabled?'<p class="muted small">سجّل حساباً لتحفظ نتائجك.</p>':'')}
  <div class="row center">${S.host===uid?`<button class="btn gold" data-go="restart">إعادة اللعب</button>`:'<span class="muted">المضيف يقدر يعيد اللعب</span>'}<button class="btn" data-go="leave">الصفحة الرئيسية</button></div></div></div></div>`;}
-async function menuSheet(){const r=await ask('القائمة',[{v:'howto',label:'طريقة اللعب'},{v:'gallery',label:'معرض البطاقات'},{v:'home',label:'الصفحة الرئيسية (تبقى في المباراة)'},{v:'quit',label:isHost?'إغلاق الغرفة وإنهاء المباراة':'الخروج من المباراة'}]);
- if(r==='home'){view='home';render();}else if(r==='quit'){const ok=await ask(isHost?'إغلاق الغرفة؟ ستنتهي المباراة لكل اللاعبين.':'الخروج من المباراة؟',[{v:1,label:'نعم'}]);if(ok)leaveView();}else if(r){backTo='table';view=r;render();}}
+// ---------- التصميم (الثيم): classic = الأصلي، majlis = الجلسة العربية
+const THEMES={classic:'التصميم الأصلي',majlis:'الجلسة العربية'};
+function curTheme(){const t=document.documentElement.dataset.theme;return THEMES[t]?t:'classic';}
+function applyTheme(t){if(!THEMES[t])t='classic';document.documentElement.dataset.theme=t;}
+function setTheme(t,save){applyTheme(t);if(save!==false){LS.set('theme',t);if(ACC.user&&ACC.savePref)ACC.savePref('theme',t);}}
+async function themeSheet(){const c=curTheme();const r=await ask('اختر التصميم',Object.keys(THEMES).map(k=>({v:k,label:THEMES[k]+(k===c?' ✓':'')})));if(r&&r!==c){setTheme(r);toast('تم تغيير التصميم','good');}}
+async function menuSheet(){const r=await ask('القائمة',[{v:'howto',label:'طريقة اللعب'},{v:'gallery',label:'معرض البطاقات'},{v:'theme',label:'التصميم: '+(THEMES[curTheme()]||'')},{v:'home',label:'الصفحة الرئيسية (تبقى في المباراة)'},{v:'quit',label:isHost?'إغلاق الغرفة وإنهاء المباراة':'الخروج من المباراة'}]);
+ if(r==='theme'){themeSheet();}else if(r==='home'){view='home';render();}else if(r==='quit'){const ok=await ask(isHost?'إغلاق الغرفة؟ ستنتهي المباراة لكل اللاعبين.':'الخروج من المباراة؟',[{v:1,label:'نعم'}]);if(ok)leaveView();}else if(r){backTo='table';view=r;render();}}
 function missSheet(){const p=G.P[uid];sheet(`<h3>مهماتي</h3><p class="muted small">المهمة المحققة تُحسب مجموعة كاملة لا تُسرق ولا تُدمّر.</p><div class="missions">${missionsV(uid,true)}</div><button class="btn wide" data-x="1">إغلاق</button>`,d=>d.querySelector('[data-x]').onclick=()=>closeSheet());}
 
 // ---------- الحسابات
@@ -477,7 +483,7 @@ async function go(k){switch(k){
   let val='';const r=await sheet(h,d=>d.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{val=d.querySelector('#np').value;closeSheet(b.dataset.v);}));if(r!=='ok')break;const e=await ACC.changePassword(val);toast(e||'تم تغيير كلمة المرور',e?'err':'good');break;}
  case 'delacct':{const ok=await ask('حذف الحساب نهائياً؟',[{v:1,label:'نعم، احذف حسابي وكل سجلي'}],{sub:'ما يمديك تتراجع بعد الحذف.'});if(!ok)break;const e=await ACC.deleteAccount();toast(e||'انحذف حسابك',e?'err':'good');if(!e){view='home';render();}break;}
  case 'rejoin':{const c=LS.get('room',null);if(c)enterRoom(c);break;}
- case 'howto':backTo=view==='table'?'table':'home';view='howto';render();break;case 'gallery':backTo=view==='table'?'table':'home';view='gallery';render();break;
+ case 'theme':themeSheet();break;case 'howto':backTo=view==='table'?'table':'home';view='howto';render();break;case 'gallery':backTo=view==='table'?'table':'home';view='gallery';render();break;
  case 'back':view=backTo==='table'&&G?(G.status==='lobby'?'lobby':'table'):'home';render();break;
  case 'docreate':createRoom(($('#nm')||{}).value,$('#ws').value,$('#mp').value);break;
  case 'dojoin':joinRoom($('#jc').value,($('#nm')||{}).value);break;
@@ -498,6 +504,6 @@ async function go(k){switch(k){
 async function init(){applyCfg();if(location.hash==='#admin')view='admin';render();
  // Firebase (إذا مفعّل): هوية اللاعب = هويته في Firebase، والغرف تمر عبر قاعدة البيانات
  if(FB.enabled){const u=await FB.ready.catch(()=>null);if(u&&FB.uid){NET.mode='fb';uid=FB.uid;}else if(FB.readyErr)toast(FB.errMsg(FB.readyErr)+' — سيتم الاتصال المباشر بدلاً من ذلك','err');}
- await ACC.init().catch(()=>{});ACC.onChange(()=>{if(NET.mode==='fb'&&FB.uid&&!code)uid=FB.uid;hist=null;render();});render();const c=LS.get('room',null);if(c&&view!=='admin')enterRoom(c);}
+ await ACC.init().catch(()=>{});const syncTheme=()=>{if(ACC.user&&ACC.loadPref)ACC.loadPref('theme').then(t=>{if(t&&THEMES[t]&&t!==curTheme()){applyTheme(t);LS.set('theme',t);}}).catch(()=>{});};syncTheme();ACC.onChange(()=>{if(ACC.user&&ACC.loadPref)ACC.loadPref('theme').then(t=>{if(t&&THEMES[t]&&t!==curTheme()){applyTheme(t);LS.set('theme',t);}}).catch(()=>{});if(NET.mode==='fb'&&FB.uid&&!code)uid=FB.uid;hist=null;render();});render();const c=LS.get('room',null);if(c&&view!=='admin')enterRoom(c);}
 window.addEventListener('hashchange',()=>{if(location.hash==='#admin'){view='admin';render();}});
 init();
