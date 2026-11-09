@@ -1,4 +1,4 @@
-/* Game of Deals — محرك القواعد (الإصدار الخامس)
+/* Game of Deals — محركك القواعد (الإصدار الخامس)
    يعمل في المتصفح (ENGINE) وفي Node للاختبارات. */
 const ENGINE=(function(){
 /*ENGINE*/
