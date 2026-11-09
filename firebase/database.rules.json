@@ -2,12 +2,10 @@
   "rules": {
     ".read": false,
     ".write": false,
-
     "rooms": {
       "$code": {
         ".validate": "$code.matches(/^[A-Z2-9]{5}$/)",
         ".write": "auth != null && data.child('host').val() === auth.uid && !newData.exists()",
-
         "host": {
           ".read": "auth != null",
           ".write": "auth != null && (!data.exists() || data.val() === auth.uid)",
@@ -27,9 +25,15 @@
           "$m": {
             ".write": "auth != null && ((!data.exists() && newData.child('from').val() === auth.uid && root.child('rooms/' + $code + '/alive').val() === true) || (!newData.exists() && root.child('rooms/' + $code + '/host').val() === auth.uid))",
             ".validate": "newData.hasChildren(['from', 'j']) && newData.child('j').isString() && newData.child('j').val().length < 20000",
-            "from": { ".validate": "newData.isString()" },
-            "j": { ".validate": true },
-            "$other": { ".validate": false }
+            "from": {
+              ".validate": "newData.isString()"
+            },
+            "j": {
+              ".validate": true
+            },
+            "$other": {
+              ".validate": false
+            }
           }
         },
         "down": {
@@ -38,8 +42,12 @@
             "$m": {
               ".write": "auth != null && ((!data.exists() && root.child('rooms/' + $code + '/host').val() === auth.uid) || (!newData.exists() && auth.uid === $g))",
               ".validate": "newData.hasChildren(['j']) && newData.child('j').isString() && newData.child('j').val().length < 500000",
-              "j": { ".validate": true },
-              "$other": { ".validate": false }
+              "j": {
+                ".validate": true
+              },
+              "$other": {
+                ".validate": false
+              }
             }
           }
         },
@@ -48,8 +56,12 @@
             ".read": "auth != null && auth.uid === $g",
             ".write": "auth != null && root.child('rooms/' + $code + '/host').val() === auth.uid",
             ".validate": "newData.hasChildren(['j']) && newData.child('j').isString() && newData.child('j').val().length < 2000000",
-            "j": { ".validate": true },
-            "$other": { ".validate": false }
+            "j": {
+              ".validate": true
+            },
+            "$other": {
+              ".validate": false
+            }
           }
         },
         "conn": {
@@ -59,28 +71,55 @@
             ".validate": "newData.isBoolean()"
           }
         },
-        "$other": { ".validate": false }
+        "$other": {
+          ".validate": false
+        }
       }
     },
-
     "users": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         ".write": "auth != null && auth.uid === $uid",
         "results": {
-          ".indexOn": ["t"],
+          ".indexOn": [
+            "t"
+          ],
           "$r": {
             ".validate": "newData.hasChildren(['t', 'players', 'won', 'sets', 'rounds', 'minutes'])",
-            "t": { ".validate": "newData.val() === now" },
-            "players": { ".validate": "newData.isNumber() && newData.val() >= 2 && newData.val() <= 6" },
-            "won": { ".validate": "newData.isBoolean()" },
-            "sets": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 30" },
-            "rounds": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000" },
-            "minutes": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1440" },
-            "$other": { ".validate": false }
+            "t": {
+              ".validate": "newData.val() === now"
+            },
+            "players": {
+              ".validate": "newData.isNumber() && newData.val() >= 2 && newData.val() <= 6"
+            },
+            "won": {
+              ".validate": "newData.isBoolean()"
+            },
+            "sets": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 30"
+            },
+            "rounds": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+            },
+            "minutes": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1440"
+            },
+            "$other": {
+              ".validate": false
+            }
           }
         },
-        "$other": { ".validate": false }
+        "$other": {
+          ".validate": false
+        },
+        "prefs": {
+          "theme": {
+            ".validate": "newData.isString() && (newData.val() === 'classic' || newData.val() === 'majlis')"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
       }
     }
   }
