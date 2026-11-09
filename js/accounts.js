@@ -44,5 +44,8 @@ const ACC=(()=>{
  async function history(){if(!user)return {rows:[],err:null};
   try{const s=await FB.db.ref('users/'+user.uid+'/results').orderByChild('t').limitToLast(500).once('value');const rows=[];s.forEach(c=>{const v=c.val()||{};rows.push({played_at:new Date(v.t||0).toISOString(),players:v.players,won:!!v.won,sets:v.sets,rounds:v.rounds,minutes:v.minutes});});rows.reverse();return {rows,err:null};}
   catch(e){return {rows:[],err:msg(e)};}}
- return {get enabled(){return enabled();},get user(){return user;},get name(){return name;},init,signUp,signIn,signOut,changePassword,deleteAccount,record,history,validName,onChange(f){listeners.push(f);}};
+ // تفضيلات اللاعب (مثل التصميم) تنحفظ مع حسابه
+ async function savePref(k,v){if(!user)return;try{await FB.db.ref('users/'+user.uid+'/prefs/'+k).set(v);}catch(e){}}
+ async function loadPref(k){if(!user)return null;try{const s=await FB.db.ref('users/'+user.uid+'/prefs/'+k).once('value');return s.val();}catch(e){return null;}}
+ return {savePref,loadPref,get enabled(){return enabled();},get user(){return user;},get name(){return name;},init,signUp,signIn,signOut,changePassword,deleteAccount,record,history,validName,onChange(f){listeners.push(f);}};
 })();
