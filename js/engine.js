@@ -20,7 +20,7 @@ const NO_BUILD=['st','rs'];
 const CARDS={};
 function def(id,o){CARDS[id]=Object.assign({id,cnt:1},o);}
 // ---- lands
-[['lb',1,[['lb_tabuk','شارع تبوك'],['lb_aqaria','شارع العقارية'],['lb_orouba','شارع العروبة'],['lb_qurayyan','شارع القريان'],['lb_kharj','شارع الخرج']]],
+[['lb',1,[['lb_tabuk','شارع تبوك'],['lb_aqaria','شارع العقارية'],['lb_orouba','شارع العروبة'],['lb_qurayyan','شارع القريات'],['lb_kharj','شارع الخرج']]],
  ['or',2,[['or_malaz','شارع الملز'],['or_south','الدائري الجنوبي'],['or_wazir','شارع الوزير'],['or_sitteen','شارع الستين'],['or_dabab','شارع الضباب']]],
  ['ye',3,[['ye_abha','طريق أبها'],['ye_dammam','طريق الدمام'],['ye_jalawi','سعود بن جلوي'],['ye_east','الدائري الشرقي'],['ye_tahlia','شارع التحلية']]],
  ['gr',4,[['gr_hail','طريق حائل'],['gr_west','الدائري الغربي'],['gr_khalid','خالد بن الوليد'],['gr_anas','أنس بن مالك'],['gr_jarir','شارع جرير']]],
