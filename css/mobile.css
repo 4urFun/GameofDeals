@@ -1,0 +1,24 @@
+/* ===== يد الجوال (شاشات أصغر من 700px فقط) — لا تؤثر على الكمبيوتر ===== */
+@media (max-width:700px){
+  .handzone{padding-top:6px}
+  .handbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 4px 6px}
+  .handbar .cnt{font-weight:800;color:var(--ink);font-size:15px}
+  .handbar .cnt span{color:var(--muted);font-weight:500;font-size:13px}
+  .handbar .all{border:1px solid rgba(232,193,112,.45);background:rgba(232,193,112,.12);color:var(--gold-soft);border-radius:99px;padding:6px 14px;font:700 14px var(--font,inherit)}
+  .hand.strip{height:auto!important;display:flex;gap:10px;overflow-x:auto;overflow-y:visible;scroll-snap-type:x mandatory;padding:6px 6px 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-padding-inline:6px}
+  .hand.strip::-webkit-scrollbar{display:none}
+  .hand.strip::before{display:none}
+  .hand.strip .hc{position:relative;flex:0 0 auto;width:min(37vw,150px);right:auto!important;bottom:auto;transform:none!important;scroll-snap-align:start;touch-action:pan-x;transition:transform .12s}
+  .hand.strip .hc:active{transform:translateY(-6px)!important}
+  .hand.strip .hc.resp{outline:3px solid var(--teal);outline-offset:2px;border-radius:12px}
+  .hand.strip .gsep{flex:0 0 2px;align-self:stretch;margin:16px 2px;border-radius:2px;background:rgba(232,193,112,.25)}
+  .handdots{display:flex;justify-content:center;gap:5px;margin-top:-6px}
+  .handdots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.18)}
+  .handdots i.on{background:var(--gold-soft)}
+  .hint{display:none}
+  /* شبكة «كل أوراقي» */
+  .handgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:10px}
+  .handgrid button{all:unset;cursor:pointer;display:block;border-radius:12px}
+  .handgrid button:active{outline:3px solid var(--gold-soft);outline-offset:2px}
+  .handgrid .gh{grid-column:1/-1;font-weight:800;color:var(--gold-soft);margin-top:6px;font-size:14px}
+}
