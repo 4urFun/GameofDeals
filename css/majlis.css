@@ -1,0 +1,66 @@
+/* ثيم «الجلسة العربية» — كل القواعد محصورة داخل [data-theme="majlis"]
+   يغيّر الألوان والخلفيات والزخارف فقط، بدون تغيير مواقع أو أحجام العناصر، وبدون لمس البطاقات (god-card) */
+[data-theme="majlis"]{
+  --mj-floor:#2b1d14; --mj-floor2:#34241a; --mj-rug:#5a1a20; --mj-rug-deep:#3f1116;
+  --mj-sand:#e3cfa8; --mj-saffron:#d19a38; --mj-teal:#17453f; --mj-ink:#1a110c; --mj-cream:#f6ecd6;
+  /* متغيرات الموقع العامة تأخذ ألوان الجلسة */
+  --bg:#2b1d14; --bar:#1a110c; --ink:#f6ecd6; --muted:#e3cfa8; --line:rgba(227,207,168,.18);
+  --gold:#d19a38; --gold-soft:#d19a38; --panel:#34241a; --panel2:#3f2b1f; --chip:rgba(0,0,0,.28);
+}
+[data-theme="majlis"] body{color:var(--mj-cream);background:
+  linear-gradient(45deg,transparent 48%,rgba(255,255,255,.035) 49% 51%,transparent 52%) 0 0/36px 36px,
+  linear-gradient(-45deg,transparent 48%,rgba(255,255,255,.035) 49% 51%,transparent 52%) 0 0/36px 36px,
+  var(--mj-floor2) fixed}
+/* الشريط العلوي */
+[data-theme="majlis"] .topbar{background:var(--mj-ink);border-bottom:3px solid var(--mj-saffron);box-shadow:none}
+[data-theme="majlis"] .topbar .icon-btn,[data-theme="majlis"] .topbar .btn{background:transparent;border:1.5px solid #6b5436;color:var(--mj-sand);border-radius:6px 14px 6px 14px}
+[data-theme="majlis"] .turnb,[data-theme="majlis"] .turnb .gold-t{color:var(--mj-sand)}
+[data-theme="majlis"] .turnb .gold-t{font-weight:800}
+[data-theme="majlis"] .code-s{color:var(--mj-saffron);font-weight:800}
+/* السجادة = ساحة اللعب (نفس المكان والمقاس) */
+[data-theme="majlis"] .felt{border-radius:6px;background:var(--mj-rug);border:10px solid var(--mj-ink);
+  box-shadow:0 0 0 3px var(--mj-saffron),0 18px 30px rgba(0,0,0,.55);overflow:visible}
+[data-theme="majlis"] .felt::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44'><path d='M22 4 40 22 22 40 4 22Z' fill='none' stroke='%23d19a38' stroke-opacity='.18' stroke-width='2'/><path d='M22 14 30 22 22 30 14 22Z' fill='%23d19a38' fill-opacity='.10'/></svg>") center/44px 44px,
+  radial-gradient(ellipse at center,rgba(0,0,0,0) 40%,rgba(0,0,0,.35) 100%)}
+[data-theme="majlis"] .felt::after{content:"";position:absolute;inset:14px;border:2px solid var(--mj-saffron);border-radius:2px;pointer-events:none;
+  background:repeating-linear-gradient(90deg,var(--mj-sand) 0 10px,transparent 10px 20px) top/100% 6px no-repeat,
+             repeating-linear-gradient(90deg,var(--mj-sand) 0 10px,transparent 10px 20px) bottom/100% 6px no-repeat;opacity:.85}
+[data-theme="majlis"] .felt .wm{display:none}
+/* عناصر زخرفة السجادة: مخفية في التصميم الأصلي */
+.rugx{display:none;position:absolute;inset:0;pointer-events:none}
+[data-theme="majlis"] .rugx{display:block}
+[data-theme="majlis"] .rugx .medallion{position:absolute;inset:26% 14%;border:2px solid rgba(209,154,56,.55);background:radial-gradient(circle,var(--mj-rug-deep),transparent 72%);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+[data-theme="majlis"] .rugx .fringe{position:absolute;left:0;right:0;height:12px;background:repeating-linear-gradient(90deg,var(--mj-sand) 0 2px,transparent 2px 7px)}
+[data-theme="majlis"] .rugx .fringe.t{top:-22px}[data-theme="majlis"] .rugx .fringe.b{bottom:-22px}
+[data-theme="majlis"] .drophint{border-radius:6px}
+/* المساند (مقاعد الخصوم) */
+[data-theme="majlis"] .seat{background:var(--mj-teal);border:2px dashed var(--mj-sand);outline:4px solid var(--mj-ink);border-radius:22px;
+  box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 8px 14px rgba(0,0,0,.5);color:var(--mj-cream)}
+[data-theme="majlis"] .seat.turn,[data-theme="majlis"] .seat.next{border:2px dashed var(--mj-sand);box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 8px 14px rgba(0,0,0,.5),0 0 0 7px var(--mj-saffron)}
+[data-theme="majlis"] .seat.tgt{box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 0 0 7px #c0392b}
+[data-theme="majlis"] .seat .av,[data-theme="majlis"] .mebar .av{border:3px solid var(--mj-saffron);box-shadow:none}
+[data-theme="majlis"] .nexttag,[data-theme="majlis"] .nexttag.turntag{background:var(--mj-saffron);color:var(--mj-ink);box-shadow:none}
+[data-theme="majlis"] .seat-stats,[data-theme="majlis"] .seat-stats b{color:var(--mj-sand)}
+[data-theme="majlis"] .pips i{background:rgba(227,207,168,.18)}[data-theme="majlis"] .pips i.on{background:var(--mj-saffron);box-shadow:none}
+/* الوسط: الحزمة وخانة الرمي وعدّاد البطاقات */
+[data-theme="majlis"] .top.empty{border:2px dashed var(--mj-sand);background:rgba(0,0,0,.28)}
+[data-theme="majlis"] .deck .n,[data-theme="majlis"] .top .n{background:var(--mj-ink);color:var(--mj-cream);border:2px solid var(--mj-saffron);border-radius:99px;font-weight:800}
+/* لوحة آخر حركة */
+[data-theme="majlis"] .lastplay{background:rgba(0,0,0,.6);border:2px solid var(--mj-saffron);border-radius:18px;box-shadow:none}
+[data-theme="majlis"] .lp-t{color:var(--mj-saffron);font-weight:800}
+[data-theme="majlis"] .dirline,[data-theme="majlis"] .dirb{color:var(--mj-cream)}
+[data-theme="majlis"] .dirline b,[data-theme="majlis"] .dirb b{color:var(--mj-saffron)}
+/* مسندك أنت ولوحتك */
+[data-theme="majlis"] .mezone{background:#7a4a14;border:2px dashed var(--mj-sand);outline:4px solid var(--mj-ink);border-radius:22px;box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 8px 14px rgba(0,0,0,.5)}
+[data-theme="majlis"] .board-lands,[data-theme="majlis"] .board-bank{background:rgba(0,0,0,.22);border-color:rgba(227,207,168,.18)}
+[data-theme="majlis"] .bankchip{background:rgba(0,0,0,.25);border-color:var(--mj-saffron)}
+[data-theme="majlis"] .mezone .btn{background:transparent;border:1.5px solid #6b5436;color:var(--mj-sand);border-radius:6px 14px 6px 14px}
+/* منطقة الأوراق (السفرة) */
+[data-theme="majlis"] .handzone{background:linear-gradient(var(--mj-ink),#221710);border-top:3px solid var(--mj-saffron);border-radius:12px 12px 0 0}
+[data-theme="majlis"] .hand::before{display:none}
+[data-theme="majlis"] .actbar [data-go=end],[data-theme="majlis"] .btn.gold{background:var(--mj-saffron);color:var(--mj-ink);border-radius:6px 14px 6px 14px}
+[data-theme="majlis"] .handbar .all{border-color:#6b5436;background:transparent;color:var(--mj-sand);border-radius:6px 14px 6px 14px}
+/* اللوحة الجانبية والنوافذ */
+[data-theme="majlis"] .side{background:var(--mj-ink)}
+[data-theme="majlis"] .panel,[data-theme="majlis"] .sheet{background:var(--mj-floor2);border-color:var(--mj-saffron)}
