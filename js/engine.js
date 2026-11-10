@@ -1,4 +1,4 @@
-/* Game of Deals — محركك القواعد (الإصدار الخامس)
+/* Game of Deals — محرك القواعد (الإصدار الخامس)
    يعمل في المتصفح (ENGINE) وفي Node للاختبارات. */
 const ENGINE=(function(){
 /*ENGINE*/
@@ -310,6 +310,12 @@ function stageActor(S){const pd=S.pending;if(!pd)return null;const t=pd.queue[0]
 function act(S,u,op){
  const P=S.P;const T_=S.turn;
  if(op.type==='join'){if(S.status!=='lobby')return 'المباراة بدأت بالفعل';if(S.players.some(p=>p.id===u)){S.players.find(p=>p.id===u).name=op.name;return null;}if(S.players.length>=S.maxP)return 'الغرفة ممتلئة';S.players.push({id:u,name:op.name});log(S,`👋 انضم ${op.name}`);return null;}
+ // البوتات: المضيف يضيف بوت في الانتظار
+ if(op.type==='addbot'){if(u!==S.host||S.status!=='lobby')return 'غير مسموح';if(S.players.length>=S.maxP)return 'الغرفة ممتلئة';let k=1;while(S.players.some(p=>p.id==='bot'+k))k++;S.players.push({id:'bot'+k,name:'بوت '+k,bot:true});log(S,`🤖 انضم بوت ${k}`);return null;}
+ // تسليم الدور للبوت / استرجاع التحكم (اللاعب نفسه فقط)
+ if(op.type==='auto'){if(S.status!=='playing'||!S.P[u])return 'غير مسموح';if(S.P[u].kicked)return 'أخرجك المضيف من المباراة';S.P[u].auto=!!op.on;if(!op.on)S.P[u].left=false;log(S,op.on?`🤖 ${nm(S,u)} سلّم اللعب للبوت`:`🎮 ${nm(S,u)} رجع يلعب بنفسه`);return null;}
+ // خروج لاعب أو طرده أثناء المباراة: البوت يكمل مكانه بنفس أوراقه وساحته
+ if((op.type==='leave'||op.type==='kick')&&S.status==='playing'){const w=op.type==='kick'?op.who:u;if(op.type==='kick'&&u!==S.host)return 'غير مسموح';if(!S.P[w])return 'غير موجود';S.P[w].auto=true;S.P[w].left=true;if(op.type==='kick')S.P[w].kicked=true;log(S,op.type==='kick'?`🚪 المضيف أخرج ${nm(S,w)} والبوت يكمل مكانه`:`🚪 ${nm(S,w)} خرج والبوت يكمل مكانه`);return null;}
  if(op.type==='leave'){if(S.status!=='lobby')return 'لا يمكن مغادرة مباراة جارية';S.players=S.players.filter(p=>p.id!==u);if(S.host===u&&S.players.length)S.host=S.players[0].id;log(S,`غادر لاعب الغرفة`);return null;}
  if(op.type==='settings'){if(u!==S.host)return 'الإعدادات للمضيف فقط';if(S.status!=='lobby')return 'لا يمكن التعديل أثناء اللعب';if(op.winSets)S.cfg.winSets=Math.max(1,Math.min(12,op.winSets|0));if(op.maxP)S.maxP=Math.max(2,Math.min(6,op.maxP|0));return null;}
  if(op.type==='start'){if(u!==S.host)return 'البدء للمضيف فقط';if(S.players.length<2)return 'يلزم لاعبان على الأقل';startGame(S);return null;}
