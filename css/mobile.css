@@ -28,3 +28,13 @@
   .hand.strip .hc{width:min(31vw,122px)}
   .handbar{margin:0 4px 4px}
 }
+
+/* زر إخفاء/إظهار شريط اليد */
+@media (max-width:700px){
+  .handbar .hbtns{display:flex;gap:6px;flex:none}
+  .handbar .tog{padding:6px 12px}
+  .handbar .tog.need{background:var(--gold);color:#2a1c05;border-color:transparent;animation:togpulse 1.2s ease-in-out infinite}
+  html.handcol .hand.strip{display:none!important}
+  html.handcol .handbar{margin-bottom:max(6px,env(safe-area-inset-bottom))}
+}
+@keyframes togpulse{50%{box-shadow:0 0 0 5px rgba(232,193,112,.35)}}
