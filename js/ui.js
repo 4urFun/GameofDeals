@@ -1,3 +1,104 @@
+/* Game of Deals — البوت (لاعب آلي يفهم القواعد)
+   يشتغل عند المضيف فقط: يقرأ حالة اللعبة ويقترح حركة قانونية واحدة في كل مرة.
+   كل حركة يتم التحقق منها على نسخة من الحالة قبل اعتمادها (ما يقدر البوت يغش أو يكسر القواعد).
+   الاستراتيجية: ينزّل الأراضي ويكمّل المجموعات، يحتفظ ببنك يحميه، يهاجم المتصدّر،
+   يدافع بكروت الرد عن الهجمات الكبيرة، ويدفع بأقل فئات ممكنة. */
+(function(root){
+function makeBot(E){
+ const RESP=['takhsi','gameover','playaway','taateel','layikthar','nothing','haza','bordga','right','left','aks','asfeq','shofghairi','loading','jibha','payforme','change'];
+ const REDIRECT=['left','right','shofghairi','asfeq','aks','payforme'];
+ // ترتيب استخدام كروت الرد: الأرخص أولاً، ونحتفظ بالأقوى
+ const RESP_ORDER=['layikthar','nothing','haza','jibha','payforme','shofghairi','left','right','asfeq','aks','loading','bordga','playaway','taateel','gameover','takhsi'];
+ const VAL={stealset:200,moab:150,nuke:150,hacker:140,royal:150,sader:140,confiscate:120,swapset:110,boom:100,auction:90,
+  stealland:85,atni:80,getjoker:70,takecard:60,jail:55,darb:50,
+  rent:70,rentwild:75,rentgold:75,cash:55,tax:60,pay5:65,bank:70,theeb:60,dabatni:60,spit:60,eslahat:45,rusoom:45,
+  draw2:65,again:95,fast:60,moves2:60,luck:40,box:40,newhand:0,
+  nap:35,estiqaad:30,tactic:35,mazharia:30,slow:25,emp:30,yaweel:30,kharab:30,peek:15,swaphand:15,ebla:25,give:0,barrier:30,reverse:10,copy:0,burn:0};
+ const clone=o=>JSON.parse(JSON.stringify(o));
+ const ok=(S,u,op)=>{const s=clone(S);return !E.act(s,u,op);};
+ const opps=(S,me)=>S.order.filter(x=>x!==me);
+ function strength(S,u){const p=S.P[u];return E.score(p)*60+E.bankMoney(p)+p.lands.length*4;}
+ function leaders(S,me,excl){return opps(S,me).filter(x=>!(excl||[]).includes(x)).sort((a,b)=>strength(S,b)-strength(S,a));}
+ function myCount(S,me,c){return S.P[me].lands.filter(l=>l.c===c).length;}
+ function landScore(S,me,c){const si=E.setInfo(S.P[me]);const o=si[c];const size=(E.COLORS[c]&&E.COLORS[c].size)||3;const have=o?o.loose.length:0;const after=have+1;return 50+25*after/size+(after>=size?90:0);}
+ function cardWorth(i){const c=E.C(i);return c.v||0;}
+
+ // ---------- الدور
+ function turnOp(S,me){const T=S.turn;const p=S.P[me];
+  if(T.phase==='jail'){for(const t of ['jailPay','jailBroke','jailWait'])if(ok(S,me,{type:t}))return {type:t};return null;}
+  if(T.phase==='draw')return {type:'draw'};
+  if(E.movesLeft(S)<=0)return {type:'end'};
+  const cands=[];const bank=E.bankMoney(p);
+  const add=(score,op)=>cands.push({score,op});
+  for(const ci of p.hand){const c=E.C(ci);
+   if(c.t==='money')add(bank<6?48:bank<12?32:20,{type:'bank',card:ci});
+   else if(c.t==='visa')add(40,{type:'bank',card:ci});
+   else if(c.t==='land')add(landScore(S,me,c.c),{type:'land',card:ci});
+   else if(c.t==='dual'){const best=c.cs.slice().sort((a,b)=>landScore(S,me,b)-landScore(S,me,a));for(const col of best)add(landScore(S,me,col)-2,{type:'land',card:ci,color:col});}
+   else if(c.t==='joker'){const cols=Object.keys(E.setInfo(p)).filter(x=>!E.completeColors(p).includes(x)).sort((a,b)=>landScore(S,me,b)-landScore(S,me,a));for(const col of cols)add(landScore(S,me,col)-5,{type:'land',card:ci,color:col});}
+   else if(c.t==='build'){for(const col of E.completeColors(p))add(45,{type:'build',card:ci,color:col});}
+   else if(c.t==='rent'){const n=opps(S,me).length;for(const col of c.cs){if(!E.setInfo(p)[col])continue;const amt=E.rentOf(p,col)*n;const o={type:'play',card:ci,color:col};add(25+amt*8,o);const m=p.hand.find(x=>['double','triple'].includes(E.C(x).a));if(m&&E.movesLeft(S)>=2)add(30+amt*14,Object.assign({mult:m},o));}}
+   else if(c.a){actionCands(S,me,ci,c,add);}
+  }
+  cands.sort((a,b)=>b.score-a.score);
+  for(const k of cands){if(k.score<12)break;if(ok(S,me,k.op))return k.op;}
+  return {type:'end'};}
+
+ function actionCands(S,me,ci,c,add){const p=S.P[me];let a=c.a;
+  if(RESP.includes(a)||a==='double'||a==='triple')return; // كروت الرد نحتفظ فيها
+  const base=VAL[a]!=null?VAL[a]:20;if(base<=0)return;
+  if(a==='royal'){for(const as of ['stealset','moab','rent','draw2','nap'])for(const t of leaders(S,me)){const o={type:'play',card:ci,t,as};if(as==='rent'){const col=Object.keys(E.setInfo(p)).sort((x,y)=>E.rentOf(p,y)-E.rentOf(p,x))[0];if(!col)continue;o.color=col;}if(E.needSel(as)){const s=bestSel(S,as,me,t);if(s==null)continue;o.sel=s;}add((VAL[as]||40)+5,o);}return;}
+  const ls=leaders(S,me);
+  if(E.GROUP.includes(a)){const o={type:'play',card:ci};if(E.needSel(a)){o.sel={};for(const x of opps(S,me)){const s=bestSel(S,a,me,x);if(s!=null)o.sel[x]=s;}if(!Object.keys(o.sel).length)return;}
+   if(a==='rentgold'){const mine=p.lands.slice().sort((x,y)=>E.rentOf(p,y.c)-E.rentOf(p,x.c));if(!mine.length)return;o.land=mine[0].i;}
+   add(base,o);const m=p.hand.find(x=>['double','triple'].includes(E.C(x).a));if(m&&E.MULTABLE.includes(a)&&E.movesLeft(S)>=2)add(base+20,Object.assign({mult:m},o));return;}
+  for(const t of ls){const o={type:'play',card:ci,t};
+   if(E.needSel(a)){const s=bestSel(S,a,me,t);if(s==null)continue;o.sel=s;if(a==='swapset'){o.mine=E.completeColors(p).find(x=>!E.fenced(p,x));if(!o.mine)continue;}if(a==='atni'){const mine=E.looseLands(p).sort((x,y)=>myCount(S,me,E.C(x).c||'')-myCount(S,me,E.C(y).c||''))[0];if(!mine)continue;o.mine=mine;}}
+   if(a==='rentwild'){const col=Object.keys(E.setInfo(p)).sort((x,y)=>E.rentOf(p,y)-E.rentOf(p,x))[0];if(!col)return;o.color=col;}
+   if(a==='give'){const g=p.hand.filter(x=>x!==ci).sort((x,y)=>cardWorth(x)-cardWorth(y))[0];if(!g)return;o.give=g;}
+   const lead=t===ls[0]?8:0;add(base+lead,o);
+   if(E.MULTABLE.includes(a)&&E.movesLeft(S)>=2){const m=p.hand.find(x=>['double','triple'].includes(E.C(x).a));if(m)add(base+lead+15,Object.assign({mult:m},o));}
+   if(!['stealland','stealset','atni','sader','confiscate'].includes(a))break;}
+ }
+ // أفضل اختيار: الأرض اللي تكمّل مجموعاتي، أو المجموعة الأغلى
+ function bestSel(S,a,me,t){const opts=E.selOptions(S,a,me,t)||[];if(!opts.length)return null;
+  const val=x=>{if(typeof x==='string'&&E.COLORS[x])return (E.COLORS[x].rent||[0]).slice(-1)[0]*3+myCount(S,me,x)*5;const c=E.C(x);return (c&&c.c?myCount(S,me,c.c)*10:0)+(c&&c.v||0);};
+  return opts.slice().sort((x,y)=>val(y)-val(x))[0];}
+
+ // ---------- الردود والمراحل المعلّقة
+ function severity(S,pd,me){if(pd.black)return 200;const a=pd.a;if(['rent','rentwild','rentgold','cash','tax','pay5','spit','eslahat','rusoom'].includes(a)){let amt=0;try{amt=(E.payAmountOf?E.payAmountOf(S,pd,me):0);}catch(e){}if(!amt){const m=pd.mult||1;amt=a==='cash'?2:a==='tax'?3*m:a==='pay5'?5:a==='spit'?13*m:4*m;}return amt*14;}
+  return VAL[a]!=null?VAL[a]:30;}
+ function pendingOp(S,me){const pd=S.pending;const p=S.P[me];
+  if(pd.stage==='bid'){if(me===pd.from||pd.bids[me]!=null)return null;const lot=pd.lots[pd.lot];const c=E.C(lot.i);const bank=E.bankMoney(p);const want=myCount(S,me,lot.c)>0?Math.min((c.v||1)+1,Math.floor(bank*0.6)):Math.min(c.v||1,Math.floor(bank*0.3));return {type:'bid',amount:Math.max(0,want)};}
+  const actor=E.stageActor(S);if(actor!==me)return null;
+  switch(pd.stage){
+   case 'respond':{const sev=severity(S,pd,me);
+    if(sev>=50){const mine=p.hand.filter(i=>E.C(i).a&&E.respOK(S,pd,me,E.C(i).a)).sort((x,y)=>RESP_ORDER.indexOf(E.C(x).a)-RESP_ORDER.indexOf(E.C(y).a));
+     for(const ci of mine){const a=E.C(ci).a;const op={type:'respond',card:ci};if(REDIRECT.includes(a)){const to=leaders(S,me,[pd.from,pd.benef]).find(x=>ok(S,me,Object.assign({to:x},op)));if(!to)continue;op.to=to;}if(ok(S,me,op))return op;}}
+    return {type:'accept'};}
+   case 'counter':{const t=p.hand.find(i=>E.C(i).a==='takhsi');if(t&&severity(S,pd,me)>=100){const op={type:'respond',card:t};if(ok(S,me,op))return op;}return {type:'pass'};}
+   case 'pay':return {type:'pay',cards:E.autoPick(S,me,pd.pay.amount)};
+   case 'lotpay':return {type:'pay',cards:E.autoPick(S,me,pd.pay.amount).filter(i=>p.bank.includes(i))};
+   case 'choose':{const l=E.looseLands(p).sort((x,y)=>(myCount(S,me,E.C(x).c||'')*10+cardWorth(x))-(myCount(S,me,E.C(y).c||'')*10+cardWorth(y)))[0];return {type:'choose',land:l};}
+   case 'retarget':{const t=leaders(S,me,[pd.from].concat(pd.excl||[])).find(x=>ok(S,me,{type:'retarget',t:x}));return t?{type:'retarget',t}:{type:'giveup'};}
+   case 'reselect':{const t=pd.queue[0];const s=bestSel(S,pd.a,pd.from,t);const op={type:'reselect',sel:s,mine:pd.a==='swapset'?E.completeColors(p).find(x=>!E.fenced(p,x)):pd.a==='atni'?E.looseLands(p)[0]:undefined};return ok(S,me,op)?op:{type:'giveup'};}
+  }
+  return null;}
+
+ // الحركة التالية لهذا البوت (أو null إذا ما عليه شي)
+ function decide(S,me){if(!S||S.status!=='playing')return null;
+  if(S.pending)return pendingOp(S,me);
+  if(S.turn&&S.turn.ctrl===me)return turnOp(S,me);
+  return null;}
+ // أي بوت (أو لاعب مسلّم للبوت) عليه الدور الحين؟
+ function whoNeeds(S,isBot){if(!S||S.status!=='playing')return null;const pd=S.pending;
+  if(pd){if(pd.stage==='bid'){for(const u of S.order)if(u!==pd.from&&pd.bids[u]==null&&isBot(u))return u;return null;}const a=E.stageActor(S);return a&&isBot(a)?a:null;}
+  return S.turn&&isBot(S.turn.ctrl)?S.turn.ctrl:null;}
+ return {decide,whoNeeds};
+}
+if(typeof module!=='undefined'&&module.exports)module.exports=makeBot;else root.makeBot=makeBot;
+})(typeof window!=='undefined'?window:this);
+
 /* Game of Deals — الواجهة */
 const E=ENGINE;const {CARDS,COLORS}=E;
 const $=s=>document.querySelector(s);
@@ -29,9 +130,18 @@ function viewFor(S,u){if(!S.P)return S;const V=JSON.parse(JSON.stringify(S));con
   if(p!==u&&!(rv&&S.reveal[u].miss))V.P[p].miss=V.P[p].miss.map(m=>m.done?m:{i:'x',done:false});}
  V.deck=V.deck.map(()=>'x');V.mdeck=V.mdeck.map(()=>'x');V.seed=0;V.reveal={};if(rv)V.reveal[u]=S.reveal[u];
  if(V.deferred)V.deferred=V.deferred.map(d=>({label:d.label,queue:d.queue}));return V;}
-function broadcast(){if(!isHost||!G)return;LS.set('host_'+code,G);const hn=Date.now();for(const u in conns){const c=conns[u];if(c.open)try{c.send({t:'state',s:viewFor(G,u),online:[...online],hn});}catch(e){}}}
-function setOnline(){online=new Set([uid,...Object.keys(conns).filter(u=>conns[u].open)]);}
-function hostApply(u,op){const S=JSON.parse(JSON.stringify(G));const err=E.act(S,u,op);if(err)return err;S.v=(S.v||0)+1;S.upd=Date.now();const old=G;G=S;broadcast();onGame(old,G);return null;}
+function broadcast(){if(!isHost||!G)return;setOnline();LS.set('host_'+code,G);const hn=Date.now();for(const u in conns){const c=conns[u];if(c.open)try{c.send({t:'state',s:viewFor(G,u),online:[...online],hn});}catch(e){}}}
+function setOnline(){online=new Set([uid,...Object.keys(conns).filter(u=>conns[u].open),...(G&&G.players?G.players.filter(p=>p.bot).map(p=>p.id):[])]);}
+// ---------- البوتات: تشتغل عند المضيف فقط
+const BOT=(typeof makeBot==='function')?makeBot(E):null;let botT=null;const offSince={};
+const BOT_GRACE=15000; // اللاعب المنقطع: البوت يلعب عنه بعد 15 ثانية من انتظاره، ويرجع له التحكم أول ما يرجع
+function isBotU(u){if(!G)return false;const pl=(G.players||[]).find(p=>p.id===u);if(pl&&pl.bot)return true;const P=G.P&&G.P[u];if(P&&P.auto)return true;
+ if(u!==uid&&!online.has(u)){const t=offSince[u]||(offSince[u]=Date.now());return Date.now()-t>BOT_GRACE;}delete offSince[u];return false;}
+function botTick(){if(!isHost||!BOT||!G||G.status!=='playing'||botT)return;const u=BOT.whoNeeds(G,isBotU);if(!u)return;
+ botT=setTimeout(()=>{botT=null;if(!isHost||!G||G.status!=='playing')return;const u2=BOT.whoNeeds(G,isBotU);if(!u2)return;let op=null;try{op=BOT.decide(G,u2);}catch(e){console.warn('bot',e);}
+  const err=op?hostApply(u2,op):'none';if(err&&G){const pd=G.pending;const fb=pd?({respond:{type:'accept'},counter:{type:'pass'},retarget:{type:'giveup'},reselect:{type:'giveup'},bid:{type:'bid',amount:0}}[pd.stage]):{type:'end'};if(fb)hostApply(u2,fb);}
+  botTick();},G.pending&&G.pending.stage==='bid'?600:900);}
+function hostApply(u,op){const S=JSON.parse(JSON.stringify(G));const err=E.act(S,u,op);if(err)return err;S.v=(S.v||0)+1;S.upd=Date.now();const old=G;G=S;broadcast();onGame(old,G);setTimeout(botTick,0);return null;}
 function sysChat(m){chatMsgs.push({n:'🔔',x:m,t:Date.now()});chatMsgs=chatMsgs.slice(-80);relayChat();}
 function relayChat(){if(isHost){LS.set('chat_'+code,chatMsgs);for(const u in conns)if(conns[u].open)try{conns[u].send({t:'chat',m:chatMsgs});}catch(e){}}renderSide();}
 // ---------- طبقة النقل: Firebase Realtime Database (إذا مفعّل) أو اتصال مباشر PeerJS
@@ -156,14 +266,15 @@ function recordResult(V){const key='rec_'+V.code+'_'+V.endedAt;if(!ACC.user||LS.
 function sendChat(text){text=String(text||'').trim().slice(0,300);if(!text||!code)return;if(isHost){chatMsgs.push({u:uid,n:myName(),x:text,t:Date.now()});chatMsgs=chatMsgs.slice(-80);relayChat();}else if(hostOK)hostConn.send({t:'chat',x:text});else toast('غير متصل بالمضيف','err');}
 function myName(){if(G){const p=G.players.find(p=>p.id===uid);if(p)return p.name;}return playerName()||LS.get('name','');}
 // المضيف ينفّذ انتهاء المهلات بنفسه حتى لا تتوقف الطاولة إذا خرج لاعب
-setInterval(()=>{if(isHost&&G&&G.status==='playing'&&G.pending&&Date.now()-G.pending.dl>1200)hostApply(uid,{type:'timeout'});},1000);
+setInterval(()=>{botTick();if(isHost&&G&&G.status==='playing'&&G.pending&&Date.now()-G.pending.dl>1200)hostApply(uid,{type:'timeout'});},1000);
 // عدّاد المهلة على الشاشة
 setInterval(()=>{const S=GV;if(!S||S.status!=='playing'||!S.pending)return;const left=Math.max(0,S.pending.dl-nowH());document.querySelectorAll('[data-pbar]').forEach(b=>b.style.width=(100*left/((S.cfg.timeout||60)*1000))+'%');document.querySelectorAll('[data-pleft]').forEach(t=>t.textContent=Math.ceil(left/1000)+' ث');},1000);
 
 
 // ---------- helpers
 function pname(u){const p=G&&G.players.find(x=>x.id===u);return p?p.name:'؟';}
-function av(u,size){const i=G?G.players.findIndex(p=>p.id===u):0;return `<span class="av" style="background:${AVC[(i+AVC.length)%AVC.length]};${size?`width:${size}px;height:${size}px`:''}">${esc(pname(u).slice(0,1))}</span>`;}
+function isBotP(u){if(!G)return false;const pl=(G.players||[]).find(p=>p.id===u);return !!((pl&&pl.bot)||(G.P&&G.P[u]&&G.P[u].auto));}
+function av(u,size){const i=G?G.players.findIndex(p=>p.id===u):0;const bot=isBotP(u);return `<span class="av${bot?' isbot':''}" style="background:${AVC[(i+AVC.length)%AVC.length]};${size?`width:${size}px;height:${size}px`:''}">${bot?'🤖':esc(pname(u).slice(0,1))}</span>`;}
 function me(){return G&&G.P?G.P[uid]:null;}
 function viewHandOwner(){if(!G||!G.turn)return uid;if(G.turn.ctrl===uid&&G.turn.p!==uid)return G.turn.p;return uid;}
 function colorDot(c){return `<span class="sw" style="background:${COLORS[c].hex}"></span>`;}
@@ -266,7 +377,7 @@ function renderSide(){const ci=$('#chatin');const keep=ci?ci.value:'';const foc=
 function chatV(){return `<div class="chat"><div class="msgs">${chatMsgs.map(m=>`<div class="msg"><b>${esc(m.n)}:</b> ${esc(m.x)}</div>`).join('')||'<div class="muted">لا توجد رسائل بعد</div>'}</div><form class="chatform" data-chat="1"><input id="chatin" maxlength="300" placeholder="اكتب رسالة…" autocomplete="off"><button class="btn sm gold">إرسال</button></form></div>`;}
 function bindChat(el){const f=el.querySelector('[data-chat]');if(f)f.onsubmit=e=>{e.preventDefault();const i=f.querySelector('input');sendChat(i.value);i.value='';};}
 async function podSheet(u){const S=G,p=S.P[u];const rv=S.reveal&&S.reveal[uid]&&S.reveal[uid].until===S.tc;const seeHand=(rv&&S.reveal[uid].hand===u)||p.st.open>S.tc;const seeMiss=rv&&S.reveal[uid].miss;
- await sheet(`<div class="row">${av(u)}<h3>${esc(pname(u))}</h3><span class="dot ${online.has(u)?'on':''}"></span></div><div class="stats" style="margin-block:8px">🂠 ${p.hand.length} بطاقة • 🏦 ${E.bankMoney(p)}M${E.hasVisa(p)?' + فيزا':''} • 🏆 ${E.score(p)}/${S.cfg.winSets}</div><div class="sec-h"><b>الساحة</b></div><div class="field-area" style="flex-wrap:wrap">${fieldV(u)}</div><div class="bank" style="margin-block:8px">${p.bank.map(i=>E.T(i)==='visa'?`<span class="coin visa">VISA</span>`:`<span class="coin">${E.C(i).v}M</span>`).join('')}</div><div class="sec-h"><b>المهمات</b></div><div class="missions">${missionsV(u,seeMiss)}</div>${seeHand?`<div class="sec-h"><b>أوراقه المكشوفة (${p.hand.length})</b>${rv&&S.reveal[uid].hand===u?'<span class="muted small"> • تشوفها أنت فقط حتى نهاية دورك</span>':''}</div><div class="peekgrid">${p.hand.map(i=>`<button class="pk" data-pk="${esc(i)}" aria-label="${esc(E.C(i).n)}">${cardImg(i)}</button>`).join('')||'<span class="muted">ما معه أوراق</span>'}</div>`:''}<button class="btn" style="margin-top:14px;width:100%" data-x="1">إغلاق</button>`,d=>{d.querySelector('[data-x]').onclick=()=>closeSheet();d.querySelectorAll('[data-land]').forEach(b=>b.onclick=()=>{closeSheet();cardModal(b.dataset.land,'view');});d.querySelectorAll('[data-pk]').forEach(b=>b.onclick=async()=>{const i=b.dataset.pk;closeSheet();await cardModal(i,'view');if(G&&G.status==='playing')podSheet(u);});});}
+ await sheet(`<div class="row"><h3>${esc(pname(u))}</h3><span class="dot ${online.has(u)?'on':''}"></span></div><div class="stats" style="margin-block:8px">🂠 ${p.hand.length} بطاقة • 🏦 ${E.bankMoney(p)}M${E.hasVisa(p)?' + فيزا':''} • 🏆 ${E.score(p)}/${S.cfg.winSets}</div><div class="sec-h"><b>الساحة</b></div><div class="field-area" style="flex-wrap:wrap">${fieldV(u)}</div><div class="bank" style="margin-block:8px">${p.bank.map(i=>E.T(i)==='visa'?`<span class="coin visa">VISA</span>`:`<span class="coin">${E.C(i).v}M</span>`).join('')}</div><div class="sec-h"><b>المهمات</b></div><div class="missions">${missionsV(u,seeMiss)}</div>${seeHand?`<div class="sec-h"><b>أوراقه المكشوفة (${p.hand.length})</b>${rv&&S.reveal[uid].hand===u?'<span class="muted small"> • تشوفها أنت فقط حتى نهاية دورك</span>':''}</div><div class="peekgrid">${p.hand.map(i=>`<button class="pk" data-pk="${esc(i)}" aria-label="${esc(E.C(i).n)}">${cardImg(i)}</button>`).join('')||'<span class="muted">ما معه أوراق</span>'}</div>`:''}${isBotP(u)?`<div class="note">🤖 ${S.P[u].left?'خرج من المباراة و':''}البوت يلعب مكانه</div>`:''}${isHost&&u!==uid&&!(S.players.find(x=>x.id===u)||{}).bot&&!p.left?`<button class="btn" style="margin-top:10px;width:100%" data-kickp="1">إخراجه واستبداله ببوت</button>`:''}<button class="btn" style="margin-top:14px;width:100%" data-x="1">إغلاق</button>`,d=>{d.querySelector('[data-x]').onclick=()=>closeSheet();const kb=d.querySelector('[data-kickp]');if(kb)kb.onclick=async()=>{const ok=await ask(`إخراج ${pname(u)}؟ البوت بيكمل مكانه بنفس أوراقه.`,[{v:1,label:'نعم، أخرجه'}]);if(!ok)return;if(await commit({type:'kick',who:u})&&conns[u]){try{conns[u].send({t:'err',m:'أخرجك المضيف من المباراة'});}catch(e){}setTimeout(()=>{try{conns[u].close();}catch(e){}},400);}};d.querySelectorAll('[data-land]').forEach(b=>b.onclick=()=>{closeSheet();cardModal(b.dataset.land,'view');});d.querySelectorAll('[data-pk]').forEach(b=>b.onclick=async()=>{const i=b.dataset.pk;closeSheet();await cardModal(i,'view');if(G&&G.status==='playing')podSheet(u);});});}
 async function landTap(iid,lo){const c=E.C(iid);if(lo===uid&&myTurn()&&E.movesLeft(G)>0&&(c.t==='dual'||c.t==='joker')){const l=G.P[uid].lands.find(x=>x.i===iid);const cs=(c.t==='dual'?c.cs:Object.keys(COLORS)).filter(x=>x!==l.c);const r=await ask(`${c.n}: حرّكها إلى لون آخر (حركة)`,cs.map(x=>({v:x,label:COLORS[x].n,color:COLORS[x].hex})),{cancelText:'عرض البطاقة فقط'});if(r)return commit({type:'flip',land:iid,color:r});}cardModal(iid,'view');}
 async function bldTap(b,lo){if(lo===uid&&myTurn()&&E.movesLeft(G)>0){const p=G.P[uid];const from=Object.keys(p.bld).find(c=>p.bld[c].includes(b));const cs=E.completeColors(p).filter(x=>x!==from&&(E.C(b).b==='fence'||!E.NO_BUILD.includes(x)));if(cs.length){const r=await ask(`انقل ${E.C(b).n} إلى مجموعة أخرى (حركة)`,setOpts(cs,uid),{cancelText:'عرض البطاقة فقط'});if(r)return commit({type:'moveBuild',card:b,to:r});}}cardModal(b,'view');}
 function sideSheet(tab){sideTab=tab;if(tab==='chat')chatSeen=chatMsgs.length;sheet(`<div style="height:70vh;display:flex;flex-direction:column" id="sideS"></div>`,d=>{const el=d.querySelector('#sideS');const draw=()=>{el.innerHTML=tab==='log'?`<h3>سجل الأحداث</h3><div class="logl">${(G.log||[]).slice().reverse().map(l=>`<div class="${l.k||''}">${esc(l.m)}</div>`).join('')}</div>`:`<h3>المحادثة</h3>${chatV()}`;bindChat(el);const m=el.querySelector('.msgs');if(m)m.scrollTop=1e9;};draw();});}
@@ -319,8 +430,9 @@ function lobbyV(){const S=G;const host=S.host===uid;return `<div class="page"><d
  <div class="row between"><div><div class="muted small">رمز الغرفة</div><div class="code">${esc(S.code)}</div></div><button class="btn" data-go="copy">نسخ الرمز</button></div>
  ${!isHost&&!hostOK?`<div class="note warn">غير متصل بالمضيف، أحاول أعيد الاتصال…</div>`:''}
  <div class="row between"><h3>اللاعبون (${S.players.length}/${S.maxP})</h3><span class="muted small">${S.players.filter(p=>online.has(p.id)).length} متصل</span></div>
- <div class="plist">${S.players.map(p=>`<div class="pl">${av(p.id)}<span class="grow">${esc(p.name)}${p.id===S.host?' <span class="muted small">• المضيف</span>':''}${p.id===uid?' <span class="muted small">• أنت</span>':''}</span><span class="dot ${online.has(p.id)?'on':''}" title="${online.has(p.id)?'متصل':'غير متصل'}"></span>${host&&p.id!==uid?`<button class="btn sm" data-kick="${esc(p.id)}">إخراج</button>`:''}</div>`).join('')}</div>
+ <div class="plist">${S.players.map(p=>`<div class="pl"><span class="dot ${online.has(p.id)?'on':''}"></span><span class="grow">${esc(p.name)}${p.id===S.host?' <span class="muted small">• المضيف</span>':''}${p.id===uid?' <span class="muted small">• أنت</span>':''}${p.bot?' <span class="muted small">• بوت</span>':''}</span><span class="dot ${online.has(p.id)?'on':''}" title="${online.has(p.id)?'متصل':'غير متصل'}"></span>${host&&p.id!==uid?`<button class="btn sm" data-kick="${esc(p.id)}">إخراج</button>`:''}</div>`).join('')}</div>
  <p class="muted">الفوز بجمع <b>${S.cfg.winSets}</b> مجموعات. ${host?'أنت المضيف: المباراة تشتغل من جهازك، فخلّ الصفحة مفتوحة طول اللعب.':'بانتظار أن يبدأ المضيف المباراة.'}</p>
+ ${host&&S.players.length<S.maxP?`<button class="btn" data-go="addbot">🤖 أضف بوت</button>`:''}
  ${host?`<div class="row"><div class="field grow"><label for="lws">مجموعات الفوز</label><input id="lws" type="number" min="1" max="12" inputmode="numeric" value="${S.cfg.winSets}"></div><button class="btn" data-go="savews">حفظ</button></div><button class="btn gold big" data-go="start" ${S.players.length<2?'disabled':''}>ابدأ المباراة</button>${S.players.length<2?'<p class="muted small">يلزم لاعبان على الأقل.</p>':''}`:''}
  <button class="btn" data-go="leave">${host?'إغلاق الغرفة':'مغادرة الغرفة'}</button></div>
  <div class="panel chatpanel" id="lobbychat"></div></div></div>`;}
@@ -334,11 +446,15 @@ function dirSvg(S,cls){const ccw=(S.dir||1)>0;return `<svg class="${cls}" viewBo
 function pipsV(n,w){w=Math.max(1,Math.min(12,w|0));return `<span class="pips" title="المجموعات المكتملة: ${n} من ${w}" aria-label="${n} من ${w}">${Array.from({length:w},(_,k)=>`<i class="${k<n?'on':''}"></i>`).join('')}</span>`;}
 const SEATS_D={1:[[50,-6]],2:[[86,50],[14,50]],3:[[88,55],[50,-8],[12,55]],4:[[88,55],[64,-8],[36,-8],[12,55]],5:[[88,55],[72,-8],[50,-10],[28,-8],[12,55]]};
 function seatOrder(S){const o=S.order,k=o.indexOf(uid);if(k<0)return o.slice();const r=[];for(let j=1;j<o.length;j++)r.push(o[(k+j)%o.length]);return r;}
-function seatV(u,pos){const S=G,p=S.P[u],st=p.st;const flags=[];if(st.jail>0)flags.push('سجن '+st.jail);if(st.nap>0)flags.push('غفوة');if(st.ebla>0)flags.push('حركة ×'+st.ebla);if(st.tactic>0)flags.push('حركة واحدة');if(st.estq>0)flags.push('سحب ×'+st.estq);if(st.barrier>S.tc)flags.push('حاجز');if(st.open>S.tc)flags.push('مكشوف');if(S.hack&&S.hack.of===u)flags.push('مخترق');
+// توزيع المقاعد: يمين الطاولة (اللاعب التالي)، فوقها، ويسارها — بدون مواقع ثابتة بالنسبة المئوية، فما تتداخل ولا تطلع برا الساحة
+function seatsV(opp,pos){const n=opp.length;const v=(k)=>seatV(opp[k],pos[k]||[50,0]);let r='',l='',top=[];
+ if(n===1)top=[0];else if(n===2){r=v(0);l=v(1);}else{r=v(0);l=v(n-1);for(let k=1;k<n-1;k++)top.push(k);}
+ return `<div class="seats n${n}"><div class="sside sr">${r}</div><div class="srow">${top.map(v).join('')}</div><div class="sside sl">${l}</div></div>`;}
+function seatV(u,pos){const S=G,p=S.P[u],st=p.st;const flags=[];const F=(ic,t)=>`<span class="fi" aria-hidden="true">${ic}</span><span class="ft">${t}</span>`;if(st.jail>0)flags.push(F('🔒'+st.jail,'سجن '+st.jail));if(st.nap>0)flags.push(F('💤','غفوة'));if(st.ebla>0)flags.push(F('↓'+st.ebla,'حركة ×'+st.ebla));if(st.tactic>0)flags.push(F('1️⃣','حركة واحدة'));if(st.estq>0)flags.push(F('🃏'+st.estq,'سحب ×'+st.estq));if(st.barrier>S.tc)flags.push(F('🛡️','حاجز'));if(st.open>S.tc)flags.push(F('👁️','مكشوف'));if(S.hack&&S.hack.of===u)flags.push(F('💻','مخترق'));
  const tgt=S.pending&&S.pending.queue[0]===u&&S.pending.stage!=='bid';const si=E.setInfo(p);
  const isNext=S.status==='playing'&&nextOf(S)===u&&S.turn.p!==u;
  return `<button class="seat ${S.turn.p===u?'turn':''} ${isNext?'next':''} ${tgt?'tgt':''}" style="left:${pos[0]}%;top:${pos[1]}%" data-side="${pos[1]>20?1:0}" data-pod="${esc(u)}" aria-label="${esc(pname(u))}">
- <span class="seat-top"><span class="sav">${av(u)}<span class="on ${online.has(u)?'y':''}"></span></span><span class="seat-id"><span class="sn">${esc(pname(u))}</span>${S.turn.p===u?'<span class="nexttag turntag">دوره</span>':isNext?'<span class="nexttag">التالي</span>':''}<span class="seat-stats"><span class="st" title="عدد الأوراق"><span class="mini-back"></span><b>${p.hand.length}</b></span><span class="st" title="البنك">🏦 <b>${E.bankMoney(p)}M</b>${E.hasVisa(p)?'<span class="visa-s">+فيزا</span>':''}</span></span></span></span>
+ <span class="seat-top"><span class="seat-id"><span class="sn-row"><span class="dot sdot ${online.has(u)?'on':''}" title="${online.has(u)?'متصل':'غير متصل'}"></span><span class="sn">${esc(pname(u))}</span>${isBotP(u)?'<span class="botm" title="يلعبه البوت" aria-label="بوت">🤖</span>':''}${S.turn.p===u?'<span class="nexttag turntag">دوره</span>':isNext?'<span class="nexttag">التالي</span>':''}</span><span class="seat-stats"><span class="st" title="عدد الأوراق"><span class="mini-back"></span><b>${p.hand.length}</b></span><span class="st" title="البنك">🏦 <b>${E.bankMoney(p)}M</b>${E.hasVisa(p)?'<span class="visa-s">+فيزا</span>':''}</span></span></span></span>
  ${pipsV(E.score(p),S.cfg.winSets)}
  <span class="seat-tags">${Object.keys(si).map(c=>`<span class="swc ${si[c].sets?'full':''}" style="--c:${COLORS[c].hex}" title="${COLORS[c].n}">${si[c].n}</span>`).join('')}${flags.map(f=>`<span class="flag">${f}</span>`).join('')}</span></button>`;}
 function fieldV(u){const p=G.P[u];const si=E.setInfo(p);const cols=Object.keys(si);if(!cols.length)return `<div class="muted small empty-field">لا توجد أراضٍ بعد</div>`;
@@ -359,12 +475,12 @@ function tableV(){const S=G;if(!S.P||(!S.P[uid]&&S.status!=='ended'))return `<di
  return `<div class="game"><header class="topbar"><div class="turnb">${turnTxt}${moves}</div><span class="dirb" title="اتجاه الدور" aria-label="اتجاه الدور، التالي ${esc(pname(nextOf(S)))}">${dirSvg(S,'dirico')}<span class="dirt">التالي: <b>${nextOf(S)===uid?'أنت':esc(pname(nextOf(S)))}</b></span></span><span class="code-s">${esc(S.code)}</span>
  <button class="icon-btn mobile-only" data-go="log">السجل</button><button class="icon-btn mobile-only" data-go="chat">المحادثة${chatMsgs.length>chatSeen?`<span class="badge">${chatMsgs.length-chatSeen}</span>`:''}</button><button class="icon-btn" data-go="menu" aria-label="القائمة">☰</button></header>
  <div class="gbody"><main class="tablecol">
- <div class="table-area ${opp.length>=2?'many':''} opp${opp.length}" id="dropzone"><div class="dirline">${dirSvg(S,'dirico')}<span>التالي: <b>${nextOf(S)===uid?'أنت':esc(pname(nextOf(S)))}</b></span></div><div class="felt"><div class="rugx" aria-hidden="true"><div class="fringe t"></div><div class="fringe b"></div><div class="medallion"></div></div>${dirSvg(S,'feltdir')}<span class="wm">GAME OF DEALS</span></div><div class="drophint">ارمِ الأمر هنا</div>${opp.map((u,k)=>seatV(u,pos[k])).join('')}
+ <div class="table-area lay opp${opp.length}" id="dropzone"><div class="dirline">${dirSvg(S,'dirico')}<span>التالي: <b>${nextOf(S)===uid?'أنت':esc(pname(nextOf(S)))}</b></span></div><div class="felt"><div class="rugx" aria-hidden="true"><div class="fringe t"></div><div class="fringe b"></div><div class="medallion"></div></div>${dirSvg(S,'feltdir')}<span class="wm">GAME OF DEALS</span></div><div class="drophint">ارمِ الأمر هنا</div>${seatsV(opp,pos)}
   <div class="tcenter"><div class="piles"><button class="deck ${canDraw?'can':''}" data-go="draw" aria-label="كومة السحب"><span class="n">${S.deck.length}</span></button>${top?`<button class="top" data-card="${esc(top)}" aria-label="آخر بطاقة: ${esc(E.C(top).n)}">${kimg(img(top),` alt=""`)}<span class="n">محروقة ${S.discard.length}</span></button>`:`<div class="top empty"></div>`}</div>
   ${lastPlayV(S)}${S.pending?`<div class="pend-desk">${pendingV()}</div>`:`<div class="lastlog">${lg?esc(lg.m):''}</div>`}</div></div>
  ${S.pending?`<div class="pendwrap">${pendingV()}</div>`:''}
  ${myT&&T_.phase==='jail'?jailV():''}
- <section class="mezone" id="myzone"><div class="myhint" id="myhint">ارمها هنا</div><div class="mebar">${av(uid)}<b class="grow">${esc(pname(uid))}</b>${pipsV(E.score(meP),S.cfg.winSets)}<span class="bankchip">🏦 <b>${E.bankMoney(meP)}M</b>${E.hasVisa(meP)?' + فيزا':''}</span><button class="btn sm" data-go="mymiss">مهماتي (${meP.miss.filter(m=>m.done).length}/${meP.miss.length})</button></div>
+ <section class="mezone" id="myzone"><div class="myhint" id="myhint">ارمها هنا</div>${meP.auto?`<div class="autobar">🤖 البوت يلعب عنك الحين${meP.kicked?'':' <button class="btn sm gold" data-go="reclaim">استرجع التحكم</button>'}</div>`:''}<div class="mebar"><b class="grow">${esc(pname(uid))}</b>${pipsV(E.score(meP),S.cfg.winSets)}<span class="bankchip">🏦 <b>${E.bankMoney(meP)}M</b>${E.hasVisa(meP)?' + فيزا':''}</span><button class="btn sm" data-go="mymiss">مهماتي (${meP.miss.filter(m=>m.done).length}/${meP.miss.length})</button></div>
  <div class="board"><div class="board-lands"><div class="board-h">أراضيك</div><div class="field-area">${fieldV(uid)}</div></div>
  <div class="board-bank"><div class="board-h">البنك <b>${E.bankMoney(meP)}M</b></div><div class="bank">${meP.bank.length?meP.bank.map(i=>E.T(i)==='visa'?`<span class="coin visa">VISA</span>`:`<span class="coin">${E.C(i).v}M</span>`).join(''):'<span class="bank-empty">اسحب الفلوس هنا</span>'}</div></div></div>
  ${hacked?`<div class="note warn">أنت تلعب دور ${esc(pname(hu))} الآن (HACKER). أي أمر تلعبه يكون لصالحه.</div>`:''}</section>
@@ -416,7 +532,7 @@ function nextEv(){const box=$('#showcase');const ev=evQ.shift();if(!ev){if(box)b
  evT=setTimeout(nextEv,evQ.length?1600:2600);}
 function resultV(){const S=G;const dur=Math.round(((S.endedAt||Date.now())-S.startedAt)/60000);const rows=S.order.slice().sort((a,b)=>E.score(S.P[b])-E.score(S.P[a]));
  return `<div class="page"><div class="wrap narrow"><div class="panel result stack"><div class="trophy">${S.winner?'🏆 '+esc(pname(S.winner)):'انتهت المباراة'}</div><p class="muted">${S.winner?`فاز بجمع ${E.score(S.P[S.winner])} مجموعات • `:''}مدة المباراة ${dur} دقيقة • ${S.tc} دورة</p>
- ${rows.map((u,k)=>`<div class="score-row"><span class="row">${k+1}. ${av(u)} ${esc(pname(u))}</span><span>${E.setsCount(S.P[u])} مجموعات + ${E.missionsDone(S.P[u])} مهام</span><span>🏦 ${E.bankMoney(S.P[u])}M</span></div>`).join('')}
+ ${rows.map((u,k)=>`<div class="score-row"><span class="row">${k+1}. ${esc(pname(u))}</span><span>${E.setsCount(S.P[u])} مجموعات + ${E.missionsDone(S.P[u])} مهام</span><span>🏦 ${E.bankMoney(S.P[u])}M</span></div>`).join('')}
  ${ACC.user?'<p class="muted small">انحفظت النتيجة في سجلك.</p>':(ACC.enabled?'<p class="muted small">سجّل حساباً لتحفظ نتائجك.</p>':'')}
  <div class="row center">${S.host===uid?`<button class="btn gold" data-go="restart">إعادة اللعب</button>`:'<span class="muted">المضيف يقدر يعيد اللعب</span>'}<button class="btn" data-go="leave">الصفحة الرئيسية</button></div></div></div></div>`;}
 // ---------- التصميم (الثيم): classic = الأصلي، majlis = الجلسة العربية
@@ -425,8 +541,8 @@ function curTheme(){const t=document.documentElement.dataset.theme;return THEMES
 function applyTheme(t){if(!THEMES[t])t='classic';document.documentElement.dataset.theme=t;}
 function setTheme(t,save){applyTheme(t);if(save!==false){LS.set('theme',t);if(ACC.user&&ACC.savePref)ACC.savePref('theme',t);}}
 async function themeSheet(){const c=curTheme();const r=await ask('اختر التصميم',Object.keys(THEMES).map(k=>({v:k,label:THEMES[k]+(k===c?' ✓':'')})));if(r&&r!==c){setTheme(r);toast('تم تغيير التصميم','good');}}
-async function menuSheet(){const r=await ask('القائمة',[{v:'howto',label:'طريقة اللعب'},{v:'gallery',label:'معرض البطاقات'},{v:'theme',label:'التصميم: '+(THEMES[curTheme()]||'')},{v:'home',label:'الصفحة الرئيسية (تبقى في المباراة)'},{v:'quit',label:isHost?'إغلاق الغرفة وإنهاء المباراة':'الخروج من المباراة'}]);
- if(r==='theme'){themeSheet();}else if(r==='home'){view='home';render();}else if(r==='quit'){const ok=await ask(isHost?'إغلاق الغرفة؟ ستنتهي المباراة لكل اللاعبين.':'الخروج من المباراة؟',[{v:1,label:'نعم'}]);if(ok)leaveView();}else if(r){backTo='table';view=r;render();}}
+async function menuSheet(){const r=await ask('القائمة',[{v:'howto',label:'طريقة اللعب'},{v:'gallery',label:'معرض البطاقات'},{v:'theme',label:'التصميم: '+(THEMES[curTheme()]||'')},...(G&&G.status==='playing'&&G.P[uid]?[{v:'auto',label:G.P[uid].auto?'🎮 استرجع التحكم من البوت':'🤖 سلّم اللعب للبوت (لو بتغيب)'}]:[]),{v:'sound',label:soundOn()?'🔇 كتم الأصوات':'🔊 تشغيل الأصوات'},{v:'side',label:sideHidden()?'إظهار السجل والمحادثة':'إخفاء السجل والمحادثة'},{v:'home',label:'الصفحة الرئيسية (تبقى في المباراة)'},{v:'quit',label:isHost?'إغلاق الغرفة وإنهاء المباراة':'الخروج من المباراة'}]);
+ if(r==='auto'){await commit({type:'auto',on:!G.P[uid].auto});}else if(r==='sound'){setSound(!soundOn());}else if(r==='side'){setSide(!sideHidden());}else if(r==='theme'){themeSheet();}else if(r==='home'){view='home';render();}else if(r==='quit'){const ok=await ask(isHost?'إغلاق الغرفة؟ ستنتهي المباراة لكل اللاعبين.':'الخروج من المباراة؟ البوت بيكمل مكانك بنفس أوراقك وساحتك.',[{v:1,label:'نعم'}]);if(ok){if(!isHost&&G&&G.status==='playing'&&hostOK){await commit({type:'leave'});}leaveView();}}else if(r){backTo='table';view=r;render();}}
 function missSheet(){const p=G.P[uid];sheet(`<h3>مهماتي</h3><p class="muted small">المهمة المحققة تُحسب مجموعة كاملة لا تُسرق ولا تُدمّر.</p><div class="missions">${missionsV(uid,true)}</div><button class="btn wide" data-x="1">إغلاق</button>`,d=>d.querySelector('[data-x]').onclick=()=>closeSheet());}
 
 // ---------- الحسابات
@@ -491,6 +607,8 @@ async function go(k){switch(k){
  case 'savews':commit({type:'settings',winSets:+$('#lws').value});break;
  case 'start':commit({type:'start'});break;
  case 'leave':if(!isHost&&G&&G.status==='lobby'&&hostOK)await commit({type:'leave'});leaveView();break;
+  case 'addbot':await commit({type:'addbot'});break;
+  case 'reclaim':await commit({type:'auto',on:false});break;
  case 'restart':if(await commit({type:'restart'}))view='lobby';render();break;
  case 'draw':if(G.turn.ctrl===uid&&G.turn.phase==='draw')commit({type:'draw'});else toast('السحب في بداية دورك فقط');break;
  case 'end':selCard=null;commit({type:'end'});break;
@@ -507,3 +625,39 @@ async function init(){applyCfg();if(location.hash==='#admin')view='admin';render
  await ACC.init().catch(()=>{});const syncTheme=()=>{if(ACC.user&&ACC.loadPref)ACC.loadPref('theme').then(t=>{if(t&&THEMES[t]&&t!==curTheme()){applyTheme(t);LS.set('theme',t);}}).catch(()=>{});};syncTheme();ACC.onChange(()=>{if(ACC.user&&ACC.loadPref)ACC.loadPref('theme').then(t=>{if(t&&THEMES[t]&&t!==curTheme()){applyTheme(t);LS.set('theme',t);}}).catch(()=>{});if(NET.mode==='fb'&&FB.uid&&!code)uid=FB.uid;hist=null;render();});render();const c=LS.get('room',null);if(c&&view!=='admin')enterRoom(c);}
 window.addEventListener('hashchange',()=>{if(location.hash==='#admin'){view='admin';render();}});
 init();
+
+
+// ---------- الأصوات: تنبيه خفيف لما يجيك الدور، وتنبيه ثاني لما يجيك طلب أو أمر أو دفع
+// الصوت يطلع من جهازك أنت فقط، وتقدر تكتمه من القائمة ☰
+let AUDIO=null;
+function soundOn(){return LS.get('sound',true)!==false;}
+function setSound(v){LS.set('sound',!!v);if(v)beep('turn');}
+function audioCtx(){try{AUDIO=AUDIO||new (window.AudioContext||window.webkitAudioContext)();if(AUDIO.state==='suspended')AUDIO.resume();}catch(e){AUDIO=null;}return AUDIO;}
+// الجوالات تطلب لمسة قبل أول صوت
+['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>{if(soundOn())audioCtx();},{once:true,passive:true}));
+function beep(kind){if(!soundOn())return;const A=audioCtx();if(!A)return;const t=A.currentTime+0.02;
+ const notes=kind==='turn'?[[659,0],[880,.14]]:[[587,0],[494,.12]];
+ for(const [f,dt] of notes){const o=A.createOscillator(),g=A.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0.0001,t+dt);g.gain.exponentialRampToValueAtTime(kind==='turn'?0.16:0.12,t+dt+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+dt+0.32);o.connect(g);g.connect(A.destination);o.start(t+dt);o.stop(t+dt+0.35);}}
+function myTurnIn(S){return !!(S&&S.status==='playing'&&S.turn&&S.turn.ctrl===uid&&!S.pending);}
+function myAskIn(S){if(!S||S.status!=='playing'||!S.pending)return null;const pd=S.pending;
+ if(pd.stage==='bid')return uid!==pd.from&&pd.bids&&pd.bids[uid]==null?'bid'+pd.lot+':'+S.tc:null;
+ let a=null;try{a=E.stageActor(S);}catch(e){}if(a!==uid)return null;if(pd.stage==='counter')return null;
+ return pd.a+':'+pd.stage+':'+S.tc+':'+(pd.queue||[]).length;}
+let lastAskKey=null;
+function soundCheck(o,n){if(!n||!n.P||!n.P[uid]||n.P[uid].auto)return;
+ const k=myAskIn(n);if(k&&k!==lastAskKey&&k!==myAskIn(o)){beep('ask');}lastAskKey=k;
+ if(myTurnIn(n)&&!(o&&o.status==='playing'&&o.turn&&o.turn.ctrl===uid&&o.tc===n.tc))beep('turn');}
+{const _og=onGame;onGame=function(o,n){_og(o,n);try{soundCheck(o,n);}catch(e){}};}
+
+// ---------- إخفاء السجل والمحادثة (يحفظ على الجهاز)
+function sideHidden(){return LS.get('noside',false)===true;}
+function setSide(h){LS.set('noside',!!h);document.documentElement.classList.toggle('noside',!!h);if(typeof render==='function')render();}
+document.documentElement.classList.toggle('noside',sideHidden());
+
+// ---------- مقاعد الخصوم بنفس الحجم دايماً (أطول مقعد يحدد طول الكل، فما يكبر أحد عن الباقي)
+function equalSeats(){const ss=[...document.querySelectorAll('.table-area.lay .seat')];if(!ss.length)return;ss.forEach(e=>e.style.minHeight='');const m=Math.max(...ss.map(e=>e.offsetHeight));ss.forEach(e=>e.style.minHeight=m+'px');}
+{const _r=render;render=function(){const x=_r.apply(this,arguments);try{equalSeats();}catch(e){}return x;};}
+window.addEventListener('resize',()=>{try{equalSeats();}catch(e){}});
+
+/* احتياط تصميم الجلسة العربية: يُحقن فقط إذا ما تحمّل css/majlis.css */
+(function(){const CSS="/* ثيم «الجلسة العربية» — كل القواعد محصورة داخل [data-theme=\"majlis\"]\n   يغيّر الألوان والخلفيات والزخارف فقط، بدون تغيير مواقع أو أحجام العناصر، وبدون لمس البطاقات (god-card) */\n[data-theme=\"majlis\"]{\n  --mj-floor:#2b1d14; --mj-floor2:#34241a; --mj-rug:#5a1a20; --mj-rug-deep:#3f1116;\n  --mj-sand:#e3cfa8; --mj-saffron:#d19a38; --mj-teal:#17453f; --mj-ink:#1a110c; --mj-cream:#f6ecd6;\n  /* متغيرات الموقع العامة تأخذ ألوان الجلسة */\n  --bg:#2b1d14; --bar:#1a110c; --ink:#f6ecd6; --muted:#e3cfa8; --line:rgba(227,207,168,.18);\n  --gold:#d19a38; --gold-soft:#d19a38; --panel:#34241a; --panel2:#3f2b1f; --chip:rgba(0,0,0,.28);\n}\n[data-theme=\"majlis\"] body{color:var(--mj-cream);background:\n  linear-gradient(45deg,transparent 48%,rgba(255,255,255,.035) 49% 51%,transparent 52%) 0 0/36px 36px,\n  linear-gradient(-45deg,transparent 48%,rgba(255,255,255,.035) 49% 51%,transparent 52%) 0 0/36px 36px,\n  var(--mj-floor2) fixed}\n/* الشريط العلوي */\n[data-theme=\"majlis\"] .topbar{background:var(--mj-ink);border-bottom:3px solid var(--mj-saffron);box-shadow:none}\n[data-theme=\"majlis\"] .topbar .icon-btn,[data-theme=\"majlis\"] .topbar .btn{background:transparent;border:1.5px solid #6b5436;color:var(--mj-sand);border-radius:6px 14px 6px 14px}\n[data-theme=\"majlis\"] .turnb,[data-theme=\"majlis\"] .turnb .gold-t{color:var(--mj-sand)}\n[data-theme=\"majlis\"] .turnb .gold-t{font-weight:800}\n[data-theme=\"majlis\"] .code-s{color:var(--mj-saffron);font-weight:800}\n/* السجادة = ساحة اللعب (نفس المكان والمقاس) */\n[data-theme=\"majlis\"] .felt{border-radius:6px;background:var(--mj-rug);border:10px solid var(--mj-ink);\n  box-shadow:0 0 0 3px var(--mj-saffron),0 18px 30px rgba(0,0,0,.55);overflow:visible}\n[data-theme=\"majlis\"] .felt::before{content:\"\";position:absolute;inset:0;pointer-events:none;\n  background:url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44'><path d='M22 4 40 22 22 40 4 22Z' fill='none' stroke='%23d19a38' stroke-opacity='.18' stroke-width='2'/><path d='M22 14 30 22 22 30 14 22Z' fill='%23d19a38' fill-opacity='.10'/></svg>\") center/44px 44px,\n  radial-gradient(ellipse at center,rgba(0,0,0,0) 40%,rgba(0,0,0,.35) 100%)}\n[data-theme=\"majlis\"] .felt::after{content:\"\";position:absolute;inset:14px;border:2px solid var(--mj-saffron);border-radius:2px;pointer-events:none;\n  background:repeating-linear-gradient(90deg,var(--mj-sand) 0 10px,transparent 10px 20px) top/100% 6px no-repeat,\n             repeating-linear-gradient(90deg,var(--mj-sand) 0 10px,transparent 10px 20px) bottom/100% 6px no-repeat;opacity:.85}\n[data-theme=\"majlis\"] .felt .wm{display:none}\n/* عناصر زخرفة السجادة: مخفية في التصميم الأصلي */\n.rugx{display:none;position:absolute;inset:0;pointer-events:none}\n[data-theme=\"majlis\"] .rugx{display:block}\n[data-theme=\"majlis\"] .rugx .medallion{position:absolute;inset:26% 14%;border:2px solid rgba(209,154,56,.55);background:radial-gradient(circle,var(--mj-rug-deep),transparent 72%);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}\n[data-theme=\"majlis\"] .rugx .fringe{position:absolute;left:0;right:0;height:12px;background:repeating-linear-gradient(90deg,var(--mj-sand) 0 2px,transparent 2px 7px)}\n[data-theme=\"majlis\"] .rugx .fringe.t{top:-22px}[data-theme=\"majlis\"] .rugx .fringe.b{bottom:-22px}\n[data-theme=\"majlis\"] .drophint{border-radius:6px}\n/* المساند (مقاعد الخصوم) */\n[data-theme=\"majlis\"] .seat{background:var(--mj-teal);border:2px dashed var(--mj-sand);outline:4px solid var(--mj-ink);border-radius:22px;\n  box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 8px 14px rgba(0,0,0,.5);color:var(--mj-cream)}\n[data-theme=\"majlis\"] .seat.turn,[data-theme=\"majlis\"] .seat.next{border:2px dashed var(--mj-sand);box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 8px 14px rgba(0,0,0,.5),0 0 0 7px var(--mj-saffron)}\n[data-theme=\"majlis\"] .seat.tgt{box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 0 0 7px #c0392b}\n[data-theme=\"majlis\"] .seat .av,[data-theme=\"majlis\"] .mebar .av{border:3px solid var(--mj-saffron);box-shadow:none}\n[data-theme=\"majlis\"] .nexttag,[data-theme=\"majlis\"] .nexttag.turntag{background:var(--mj-saffron);color:var(--mj-ink);box-shadow:none}\n[data-theme=\"majlis\"] .seat-stats,[data-theme=\"majlis\"] .seat-stats b{color:var(--mj-sand)}\n[data-theme=\"majlis\"] .pips i{background:rgba(227,207,168,.18)}[data-theme=\"majlis\"] .pips i.on{background:var(--mj-saffron);box-shadow:none}\n/* الوسط: الحزمة وخانة الرمي وعدّاد البطاقات */\n[data-theme=\"majlis\"] .top.empty{border:2px dashed var(--mj-sand);background:rgba(0,0,0,.28)}\n[data-theme=\"majlis\"] .deck .n,[data-theme=\"majlis\"] .top .n{background:var(--mj-ink);color:var(--mj-cream);border:2px solid var(--mj-saffron);border-radius:99px;font-weight:800}\n/* لوحة آخر حركة */\n[data-theme=\"majlis\"] .lastplay{background:rgba(0,0,0,.6);border:2px solid var(--mj-saffron);border-radius:18px;box-shadow:none}\n[data-theme=\"majlis\"] .lp-t{color:var(--mj-saffron);font-weight:800}\n[data-theme=\"majlis\"] .dirline,[data-theme=\"majlis\"] .dirb{color:var(--mj-cream)}\n[data-theme=\"majlis\"] .dirline b,[data-theme=\"majlis\"] .dirb b{color:var(--mj-saffron)}\n/* مسندك أنت ولوحتك */\n[data-theme=\"majlis\"] .mezone{background:#7a4a14;border:2px dashed var(--mj-sand);outline:4px solid var(--mj-ink);border-radius:22px;box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 8px 14px rgba(0,0,0,.5)}\n[data-theme=\"majlis\"] .board-lands,[data-theme=\"majlis\"] .board-bank{background:rgba(0,0,0,.22);border-color:rgba(227,207,168,.18)}\n[data-theme=\"majlis\"] .bankchip{background:rgba(0,0,0,.25);border-color:var(--mj-saffron)}\n[data-theme=\"majlis\"] .mezone .btn{background:transparent;border:1.5px solid #6b5436;color:var(--mj-sand);border-radius:6px 14px 6px 14px}\n/* منطقة الأوراق (السفرة) */\n[data-theme=\"majlis\"] .handzone{background:linear-gradient(var(--mj-ink),#221710);border-top:3px solid var(--mj-saffron);border-radius:12px 12px 0 0}\n[data-theme=\"majlis\"] .hand::before{display:none}\n[data-theme=\"majlis\"] .actbar [data-go=end],[data-theme=\"majlis\"] .btn.gold{background:var(--mj-saffron);color:var(--mj-ink);border-radius:6px 14px 6px 14px}\n[data-theme=\"majlis\"] .handbar .all{border-color:#6b5436;background:transparent;color:var(--mj-sand);border-radius:6px 14px 6px 14px}\n/* اللوحة الجانبية والنوافذ */\n[data-theme=\"majlis\"] .side{background:var(--mj-ink)}\n[data-theme=\"majlis\"] .panel,[data-theme=\"majlis\"] .sheet{background:var(--mj-floor2);border-color:var(--mj-saffron)}\n\n/* الجلسة العربية مع التوزيع الجديد: نفس قواعد الحجم الثابت، إطار رفيع فقط */\n[data-theme=\"majlis\"] .table-area .seat.turn{box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 0 0 5px var(--mj-saffron)!important;border-color:var(--mj-sand)!important}\n[data-theme=\"majlis\"] .table-area .seat.next{box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 8px 14px rgba(0,0,0,.5)!important;border:2px dashed var(--mj-sand)!important}\n[data-theme=\"majlis\"] .table-area .seat.tgt{box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 0 0 5px #c0392b!important}\n[data-theme=\"majlis\"] .table-area .seat{outline-width:4px}\n[data-theme=\"majlis\"] .table-area.lay .felt{margin:14px 6px 18px}\n[data-theme=\"majlis\"] .autobar{background:rgba(23,69,63,.6);border-color:var(--mj-sand)}\n";function has(){for(const s of document.styleSheets){try{for(const r of s.cssRules)if(r.selectorText&&r.selectorText.indexOf('data-theme="majlis"')>=0)return true;}catch(e){}}return false;}function chk(){if(has()||document.getElementById('majlis-fallback'))return;const st=document.createElement('style');st.id='majlis-fallback';st.textContent=CSS;document.head.appendChild(st);}if(document.readyState==='complete')chk();else window.addEventListener('load',chk);setTimeout(chk,3000);})();
