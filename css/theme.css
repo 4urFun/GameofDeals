@@ -403,3 +403,18 @@ html.noside .topbar .mobile-only{display:inline-flex!important}
 .mebar b.grow{min-width:0;flex:1 1 60px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mebar .pips{flex:none}
 @media (max-width:700px){.mebar{gap:8px}.mebar .pips i{width:10px;height:8px}.mebar b.grow{font-size:16px}}
+
+/* خانة ثابتة لآخر حركة/الأوامر داخل الطاولة: مساحتها محجوزة دائماً، فما تتحرك المقاعد ولا الشاشة لما يجي أمر */
+.table-area.lay .tslot{position:relative;width:100%;height:92px;display:flex;align-items:flex-start;justify-content:center}
+.table-area.lay .tslot .lastplay{max-height:92px;overflow:hidden}
+.table-area.lay .tslot.has-pend .lastplay{display:none}
+.table-area.lay .tslot .pend-desk{display:block!important;position:absolute;inset-inline:0;top:0;z-index:30}
+.table-area.lay .tslot .pend-desk .pending{margin:0;box-shadow:0 14px 34px rgba(0,0,0,.6)}
+.table-area.lay ~ .pendwrap{display:none!important}
+.table-area.lay{overflow:visible!important}
+@container tbl (min-width:740px){.table-area.lay .tslot{height:100px}.table-area.lay .tslot .lastplay{max-height:100px}}
+/* الكومتين بارتفاع ثابت: ما يتغير ارتفاع الطاولة لما تنزل أول بطاقة محروقة */
+.table-area.lay .piles{align-items:flex-start}
+.table-area.lay .top{aspect-ratio:400/597;box-sizing:border-box}
+/* شريط الأزرار فوق اليد بارتفاع ثابت: ظهور/اختفاء زر «أنهِ الدور» أو «اسحب» ما يحرّك اليد */
+@media (min-width:701px){.handzone .actbar{min-height:48px}}
