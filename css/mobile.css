@@ -22,3 +22,9 @@
   .handgrid button:active{outline:3px solid var(--gold-soft);outline-offset:2px}
   .handgrid .gh{grid-column:1/-1;font-weight:800;color:var(--gold-soft);margin-top:6px;font-size:14px}
 }
+
+/* الجوالات القصيرة أو بخط كبير: أوراق اليد أصغر شوي عشان تبان الطاولة */
+@media (max-width:700px) and (max-height:900px){
+  .hand.strip .hc{width:min(31vw,122px)}
+  .handbar{margin:0 4px 4px}
+}
