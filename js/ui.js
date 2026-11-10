@@ -140,7 +140,10 @@ function isBotU(u){if(!G)return false;const pl=(G.players||[]).find(p=>p.id===u)
 function botTick(){if(!isHost||!BOT||!G||G.status!=='playing'||botT)return;const u=BOT.whoNeeds(G,isBotU);if(!u)return;
  botT=setTimeout(()=>{botT=null;if(!isHost||!G||G.status!=='playing')return;const u2=BOT.whoNeeds(G,isBotU);if(!u2)return;let op=null;try{op=BOT.decide(G,u2);}catch(e){console.warn('bot',e);}
   const err=op?hostApply(u2,op):'none';if(err&&G){const pd=G.pending;const fb=pd?({respond:{type:'accept'},counter:{type:'pass'},retarget:{type:'giveup'},reselect:{type:'giveup'},bid:{type:'bid',amount:0}}[pd.stage]):{type:'end'};if(fb)hostApply(u2,fb);}
-  botTick();},G.pending&&G.pending.stage==='bid'?600:900);}
+  botTick();},botDelay(G));}
+/* سرعة واقعية للبوت: وقت «تفكير» عشوائي حسب نوع الحركة حتى يقدر اللاعبون يتابعون */
+function botDelay(S){const r=(a,b)=>a+Math.random()*(b-a);const pd=S.pending;if(pd){if(pd.stage==='bid')return r(1600,2600);if(pd.stage==='pay'||pd.stage==='lotpay'||pd.stage==='choose')return r(2200,3200);return r(2000,3200);}
+ const T=S.turn;if(T.phase==='draw')return r(1500,2300);if(T.phase==='jail')return r(1800,2600);return r(2400,3600);}
 function hostApply(u,op){const S=JSON.parse(JSON.stringify(G));const err=E.act(S,u,op);if(err)return err;S.v=(S.v||0)+1;S.upd=Date.now();const old=G;G=S;broadcast();onGame(old,G);setTimeout(botTick,0);return null;}
 function sysChat(m){chatMsgs.push({n:'🔔',x:m,t:Date.now()});chatMsgs=chatMsgs.slice(-80);relayChat();}
 function relayChat(){if(isHost){LS.set('chat_'+code,chatMsgs);for(const u in conns)if(conns[u].open)try{conns[u].send({t:'chat',m:chatMsgs});}catch(e){}}renderSide();}
@@ -403,11 +406,16 @@ function howtoV(){return `<div class="wrap"><div class="row" style="justify-cont
 
 
 // ---------- العرض
+function hsig(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)+'.'+s.length;}
 function render(){const app=$('#app');let h='';
  switch(view){case 'home':h=homeV();break;case 'create':h=createV();break;case 'join':h=joinV();break;case 'lobby':h=G?lobbyV():loadingV();break;case 'table':h=G?tableV():loadingV();break;
   case 'gallery':h=galleryV();break;case 'howto':h=howtoV();break;case 'admin':h=adminV();break;case 'login':h=authV('login');break;case 'signup':h=authV('signup');break;case 'profile':h=profileV();break;default:h=homeV();}
  const keep=document.activeElement&&document.activeElement.id&&document.activeElement.tagName==='INPUT'?{id:document.activeElement.id,v:document.activeElement.value,p:document.activeElement.selectionStart}:null;
- app.innerHTML=h;bind();if(view==='table'){layoutHand();renderSide();}if(view==='lobby')renderSide();
+ const oh=$('#hand');const osig=oh&&view==='table'?oh.dataset.sig:null;
+ app.innerHTML=h;
+ /* اليد ما تتغير؟ نرجّع نفس العناصر القديمة بدل رسمها من جديد: ما تهتز البطاقات وما يرجع الشريط لأوله */
+ if(osig){const nh=$('#hand');if(nh&&nh.dataset.sig===osig)nh.replaceWith(oh);}
+ bind();if(view==='table'){layoutHand();renderSide();}if(view==='lobby')renderSide();
  if(keep){const el=document.getElementById(keep.id);if(el&&el.tagName==='INPUT'){el.value=keep.v;el.focus();try{el.setSelectionRange(keep.p,keep.p);}catch(e){}}}}
 function acctBar(){if(!ACC.enabled)return `<div class="acct"><span class="muted">تلعب كضيف</span></div>`;
  return ACC.user?`<div class="acct"><span>مرحباً، <b>${esc(ACC.name)}</b></span><button class="btn sm" data-go="profile">حسابي وسجلي</button></div>`:`<div class="acct"><span class="muted">تلعب كضيف</span><button class="btn sm" data-go="login">تسجيل الدخول</button><button class="btn sm" data-go="signup">حساب جديد</button></div>`;}
@@ -477,7 +485,7 @@ function tableV(){const S=G;if(!S.P||(!S.P[uid]&&S.status!=='ended'))return `<di
  <div class="gbody"><main class="tablecol">
  <div class="table-area lay opp${opp.length}" id="dropzone"><div class="dirline">${dirSvg(S,'dirico')}<span>التالي: <b>${nextOf(S)===uid?'أنت':esc(pname(nextOf(S)))}</b></span></div><div class="felt"><div class="rugx" aria-hidden="true"><div class="fringe t"></div><div class="fringe b"></div><div class="medallion"></div></div>${dirSvg(S,'feltdir')}<span class="wm">GAME OF DEALS</span></div><div class="drophint">ارمِ الأمر هنا</div>${seatsV(opp,pos)}
   <div class="tcenter"><div class="piles"><button class="deck ${canDraw?'can':''}" data-go="draw" aria-label="كومة السحب"><span class="n">${S.deck.length}</span></button>${top?`<button class="top" data-card="${esc(top)}" aria-label="آخر بطاقة: ${esc(E.C(top).n)}">${kimg(img(top),` alt=""`)}<span class="n">محروقة ${S.discard.length}</span></button>`:`<div class="top empty"></div>`}</div>
-  ${lastPlayV(S)}${S.pending?`<div class="pend-desk">${pendingV()}</div>`:`<div class="lastlog">${lg?esc(lg.m):''}</div>`}</div></div>
+  <div class="tslot ${S.pending?'has-pend':''}">${lastPlayV(S)}${S.pending?`<div class="pend-desk">${pendingV()}</div>`:`<div class="lastlog">${lg?esc(lg.m):''}</div>`}</div></div></div>
  ${S.pending?`<div class="pendwrap">${pendingV()}</div>`:''}
  ${myT&&T_.phase==='jail'?jailV():''}
  <section class="mezone" id="myzone"><div class="myhint" id="myhint">ارمها هنا</div>${meP.auto?`<div class="autobar">🤖 البوت يلعب عنك الحين${meP.kicked?'':' <button class="btn sm gold" data-go="reclaim">استرجع التحكم</button>'}</div>`:''}<div class="mebar"><b class="grow">${esc(pname(uid))}</b>${pipsV(E.score(meP),S.cfg.winSets)}<span class="bankchip">🏦 <b>${E.bankMoney(meP)}M</b>${E.hasVisa(meP)?' + فيزا':''}</span><button class="btn sm" data-go="mymiss">مهماتي (${meP.miss.filter(m=>m.done).length}/${meP.miss.length})</button></div>
@@ -485,7 +493,7 @@ function tableV(){const S=G;if(!S.P||(!S.P[uid]&&S.status!=='ended'))return `<di
  <div class="board-bank"><div class="board-h">البنك <b>${E.bankMoney(meP)}M</b></div><div class="bank">${meP.bank.length?meP.bank.map(i=>E.T(i)==='visa'?`<span class="coin visa">VISA</span>`:`<span class="coin">${E.C(i).v}M</span>`).join(''):'<span class="bank-empty">اسحب الفلوس هنا</span>'}</div></div></div>
  ${hacked?`<div class="note warn">أنت تلعب دور ${esc(pname(hu))} الآن (HACKER). أي أمر تلعبه يكون لصالحه.</div>`:''}</section>
  <section class="handzone"><div class="actbar"><span class="info">${hacked?'يد '+esc(pname(hu))+' • ':''}${hand.length} بطاقة${myT&&T_.phase==='play'?` • ${T_.unl?'حركات مفتوحة':'متبقي '+left+' حركات'}`:''}</span><span class="row">${canDraw?`<button class="btn gold" data-go="draw">اسحب ${E.drawCountFor(S,T_.p)}</button>`:''}${myT&&T_.phase==='play'&&!S.pending?`<button class="btn" data-go="end">أنهِ الدور</button>`:''}</span></div>
- <div class="hand" id="hand">${hand.map(i=>{const resp=S.pending&&E.C(i).a&&E.respOK(S,S.pending,uid,E.C(i).a)&&hu===uid;return `<button class="hc ${resp?'resp':''}" data-hc="${esc(i)}" aria-label="${esc(E.C(i).n)}">${kimg(img(i),` alt="" draggable="false"`)}</button>`;}).join('')||'<span class="muted">لا توجد بطاقات</span>'}</div>
+ ${(()=>{const hh=hand.map(i=>{const resp=S.pending&&E.C(i).a&&E.respOK(S,S.pending,uid,E.C(i).a)&&hu===uid;return `<button class="hc ${resp?'resp':''}" data-hc="${esc(i)}" aria-label="${esc(E.C(i).n)}">${kimg(img(i),` alt="" draggable="false"`)}</button>`;}).join('')||'<span class="muted">لا توجد بطاقات</span>';return `<div class="hand" id="hand" data-sig="${hsig(hh)}">${hh}</div>`;})()}
  <div class="hint">${hand.length?'الأراضي والفلوس اسحبها لساحتك، والأوامر ارمها في وسط الطاولة، أو اضغط على البطاقة لتشوف تفاصيلها':''}</div></section>
  </main><aside class="side" id="side"></aside></div></div>`;}
 function layoutHand(){const box=$('#hand');if(!box)return;const cards=[...box.querySelectorAll('.hc')];const n=cards.length;if(!n){box.style.height='60px';return;}const W=box.clientWidth;
