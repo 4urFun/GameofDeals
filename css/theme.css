@@ -418,3 +418,16 @@ html.noside .topbar .mobile-only{display:inline-flex!important}
 .table-area.lay .top{aspect-ratio:400/597;box-sizing:border-box}
 /* شريط الأزرار فوق اليد بارتفاع ثابت: ظهور/اختفاء زر «أنهِ الدور» أو «اسحب» ما يحرّك اليد */
 @media (min-width:701px){.handzone .actbar{min-height:48px}}
+/* الجوال: «دوره/التالي» شارة على الحافة العلوية للصندوق، ما تزيد ارتفاعه أبداً؛ وسطر الأراضي محجوز دائماً */
+@container tbl (max-width:739px){
+  .table-area.lay .seat{overflow:visible}
+  .table-area.lay .sn-row .nexttag{position:absolute;top:-7px;inset-inline-end:8px;z-index:3;box-shadow:0 2px 6px rgba(0,0,0,.45)}
+  .table-area.lay .seat-tags{min-height:15px}
+  .table-area.lay .seats{row-gap:10px}
+}
+/* سطر الأراضي/الحالات محجوز دائماً حتى لو فاضي: حجم الصندوق ما يتغير لما ينزل اللاعب أول أرض */
+.table-area.lay .seat-tags:empty{display:flex}
+.table-area.lay .seat-tags{min-height:17px}
+@container tbl (max-width:739px){.table-area.lay .seat-tags{min-height:15px}}
+@container tbl (min-width:740px){.table-area.lay .seat-tags{min-height:21px}}
+@container tbl (max-width:739px){.table-area.lay .sn-row .nexttag{font-size:10.5px;line-height:15px;padding:0 7px}}
