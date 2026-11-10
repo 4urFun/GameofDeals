@@ -273,3 +273,133 @@ body{background:
 .lotinfo{display:grid;gap:2px;font-size:13.5px}
 .lotinfo b{font-size:15px}
 .lotcol{display:inline-flex;align-items:center;gap:5px;color:var(--muted)}
+
+/* =====================================================================
+   توزيع الطاولة الجديد (lay): شبكة بدل المواقع الثابتة
+   - المقاعد في خانات (يمين / فوق / يسار) فما تتداخل ولا تطلع برا الساحة
+   - يعتمد على عرض منطقة اللعب نفسها (container query) مو عرض الشاشة،
+     فيضبط مع الزوم 125% وعرض الآيباد بالطول والعرض وفتح/إخفاء السجل
+   - حجم المقعد ثابت: «دوره» و«التالي» بجانب الاسم، والإطار رفيع ما يكبّر الصندوق
+   ===================================================================== */
+.tablecol{container-type:inline-size;container-name:tbl}
+.table-area.lay{position:relative;height:auto!important;flex:none!important;min-height:0!important;display:grid;gap:8px;
+  grid-template-columns:minmax(0,1fr);grid-template-areas:"dir" "seats" "c";align-items:start}
+.table-area.lay .dirline{grid-area:dir;display:flex;position:static;margin:0;align-items:center;justify-content:center;gap:6px;font-size:13px;color:var(--muted)}
+.table-area.lay .dirline b{color:var(--gold-soft)}
+.table-area.lay .dirline .dirico{width:16px;height:16px;color:var(--gold-soft)}
+.table-area.lay .seats{grid-area:seats;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 6px;position:relative;z-index:3}
+.table-area.lay .seats.n1{grid-template-columns:minmax(0,220px);justify-content:center}
+.table-area.lay .seats.n2,.table-area.lay .seats.n4{grid-template-columns:repeat(2,minmax(0,1fr))}
+.table-area.lay .srow,.table-area.lay .sside{display:contents}
+.table-area.lay .sr>.seat{order:0}.table-area.lay .srow>.seat{order:1}.table-area.lay .sl>.seat{order:2}
+.table-area.lay .seat{position:relative!important;left:auto!important;top:auto!important;transform:none!important;width:auto!important;min-width:0;margin:0}
+.table-area.lay .felt,.table-area.lay .drophint{grid-area:c;position:relative!important;inset:auto!important;min-height:230px;margin:6px 4px 4px}
+.table-area.lay .drophint{z-index:4}
+.table-area.lay .tcenter{grid-area:c;position:relative!important;left:auto!important;top:auto!important;transform:none!important;width:min(92%,460px)!important;justify-self:center;align-self:center;padding:22px 0 16px;z-index:2}
+.table-area.lay .feltdir,.table-area.lay .mat{display:none}
+
+/* مقعد الخصم المضغوط (الجوال والشاشات الضيقة) */
+.table-area.lay .seat{padding:6px 7px 7px;gap:4px}
+.table-area.lay .seat-top{flex-direction:row!important;gap:6px;align-items:center}
+.table-area.lay .seat-id{align-items:flex-start!important;width:auto!important}
+.table-area.lay .sav .av{width:34px!important;height:34px!important;font-size:16px!important}
+.sn-row{display:flex;align-items:center;gap:5px;min-width:0;max-width:100%}
+.sn-row .sn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sn-row .nexttag{flex:none}
+.table-area.lay .sn{font-size:13.5px!important;text-align:start!important}
+.table-area.lay .seat-stats{font-size:12.5px!important;gap:0 8px!important;justify-content:flex-start!important}
+.table-area.lay .seat-stats b{font-size:13px!important}
+.table-area.lay .mini-back{width:10px!important;height:15px!important}
+.table-area.lay .seat .pips i{height:5px!important}
+.table-area.lay .seat-tags{justify-content:flex-start!important}
+.table-area.lay .swc{min-width:16px!important;height:16px!important;line-height:16px!important;font-size:10.5px!important}
+.table-area.lay .seat-tags .flag{font-size:10.5px!important;line-height:16px!important}
+.table-area.lay .nexttag{font-size:10px;line-height:16px;padding:0 6px}
+
+/* المقعد اللي عليه الدور: إطار ذهبي رفيع فقط — نفس الحجم. التالي: كلمة فقط. المستهدف: إطار رفيع بلونه */
+.table-area .seat.turn{box-shadow:0 0 0 1px var(--gold),0 8px 20px rgba(0,0,0,.45)!important;border-color:var(--gold)!important}
+.table-area .seat.next{box-shadow:0 8px 20px rgba(0,0,0,.45)!important;border-style:solid!important;border-color:rgba(232,193,112,.2)!important;border-top-color:rgba(232,193,112,.5)!important}
+.table-area .seat.tgt{box-shadow:0 0 0 1px var(--danger),0 8px 20px rgba(0,0,0,.45)!important}
+.table-area .seat.turn::before{content:none!important;display:none!important}
+
+/* منطقة لعب عريضة (كمبيوتر، آيباد): خصوم حول الطاولة — يمين وفوق ويسار */
+@container tbl (min-width:740px){
+  .table-area.lay{grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto minmax(300px,auto);
+    grid-template-areas:"dir dir dir" "top top top" "r c l";column-gap:0}
+  .table-area.lay .dirline{display:none}
+  .table-area.lay .seats{display:contents}
+  .table-area.lay .srow{grid-area:top;display:flex;justify-content:center;gap:12px;margin-bottom:-26px;z-index:3;min-width:0}
+  .table-area.lay .sside{display:flex;align-items:center;z-index:3;min-width:0}
+  .table-area.lay .sr{grid-area:r;padding-inline-start:16px}.table-area.lay .sl{grid-area:l;padding-inline-end:16px}
+  .table-area.lay .sside:empty{display:none}
+  .table-area.lay .srow>.seat{flex:0 1 210px}
+  .table-area.lay .sside>.seat{width:clamp(150px,19cqw,200px)!important}
+  .table-area.lay .felt,.table-area.lay .drophint{grid-area:3 / 1 / 4 / 4;min-height:300px;margin:0 6px 6px}
+  .table-area.lay .tcenter{grid-area:c;padding:40px 10px 18px;width:min(100%,460px)!important}
+  .table-area.lay.opp1 .tcenter,.table-area.lay.opp2 .tcenter{padding-top:34px}
+  .table-area.lay .seat{padding:9px 11px 10px;gap:6px}
+  .table-area.lay .sav .av{width:46px!important;height:46px!important;font-size:21px!important}
+  .table-area.lay .sn{font-size:16.5px!important}
+  .table-area.lay .seat-stats{font-size:14.5px!important;gap:0 10px!important}
+  .table-area.lay .seat-stats b{font-size:15px!important}
+  .table-area.lay .mini-back{width:12px!important;height:18px!important}
+  .table-area.lay .seat .pips i{height:7px!important}
+  .table-area.lay .swc{min-width:19px!important;height:19px!important;line-height:19px!important;font-size:12px!important}
+  .table-area.lay .seat-tags .flag{font-size:11.5px!important;line-height:19px!important}
+  .table-area.lay .nexttag{font-size:11.5px;line-height:19px;padding:0 8px}
+}
+@container tbl (min-width:1100px){
+  .table-area.lay .srow>.seat{flex-basis:230px}
+  .table-area.lay .felt,.table-area.lay .drophint{min-height:330px}
+}
+
+/* إخفاء السجل والمحادثة (الكمبيوتر والآيباد): الساحة تاخذ العرض كامل، والسجل والمحادثة من أزرار الشريط العلوي */
+html.noside .gbody{grid-template-columns:minmax(0,1fr)!important}
+html.noside .side{display:none!important}
+html.noside .topbar .mobile-only{display:inline-flex!important}
+
+/* البوت */
+.av.isbot{font-size:.8em}
+.autobar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:rgba(98,195,181,.12);border:1px solid rgba(98,195,181,.45);border-radius:12px;padding:8px 12px;margin-bottom:8px;font-weight:700}
+/* المقاعد بنفس الطول في الصف الواحد، وطول أدنى ثابت (ما يتغير مع «دوره» أو «التالي») */
+.table-area.lay .srow{align-items:stretch}
+.table-area.lay .seat{justify-content:flex-start}
+@container tbl (min-width:740px){.table-area.lay .seat{min-height:104px}.table-area.lay .sside{align-items:center}}
+.table-area.lay .seat{min-height:78px}
+@container tbl (min-width:740px){.table-area.lay .sside{align-self:stretch;padding-block:34px 10px}}
+
+/* ===== شاشات ضيقة (الجوال): مقعد أصغر، الحالات أيقونات، «دوره/التالي» تحت الاسم ===== */
+.seat-tags .flag .fi{display:none}
+@container tbl (max-width:739px){
+  .table-area.lay .seats{gap:6px 5px}
+  .table-area.lay .seat{padding:5px 6px 6px;gap:3px;border-radius:12px}
+  .table-area.lay .seat-top{gap:5px}
+  .table-area.lay .sav .av{width:28px!important;height:28px!important;font-size:14px!important}
+  .table-area.lay .sav .on{width:8px;height:8px}
+  .table-area.lay .sn-row{flex-direction:column;align-items:flex-start;gap:1px}
+  .table-area.lay .sn-row .sn{max-width:100%}
+  .table-area.lay .sn{font-size:13px!important;line-height:1.25}
+  .table-area.lay .nexttag{font-size:9.5px;line-height:14px;padding:0 6px}
+  .table-area.lay .seat-stats{font-size:12px!important}
+  .table-area.lay .seat .pips i{height:4px!important}
+  .table-area.lay .seat-tags{gap:2px}
+  .table-area.lay .swc{min-width:15px!important;height:15px!important;line-height:15px!important;font-size:10px!important;border-radius:4px}
+  .table-area.lay .seat-tags .flag{padding:0 3px!important;font-size:11px!important;line-height:15px!important}
+  .table-area.lay .seat-tags .flag .fi{display:inline}.table-area.lay .seat-tags .flag .ft{display:none}
+  .table-area.lay .felt,.table-area.lay .drophint{min-height:190px}
+  .table-area.lay .tcenter{padding:14px 0 10px}
+  .table-area.lay .seat{min-height:0}
+  .table-area.lay .seat-top{flex-wrap:wrap;align-items:center;row-gap:3px}
+  .table-area.lay .seat-id{display:contents}
+  .table-area.lay .sn-row{flex:1 1 0;min-width:0}
+  .table-area.lay .seat-stats{flex:1 0 100%;flex-wrap:nowrap;gap:0 7px!important;justify-content:space-between!important}
+}
+
+/* بدون صور بروفايل: الاسم + نقطة الاتصال فقط */
+.table-area .seat .sn-row{align-items:center}
+.table-area .seat .sdot{width:8px;height:8px;flex:none;box-shadow:0 0 0 2px rgba(0,0,0,.25)}
+@container tbl (max-width:739px){.table-area.lay .sn-row{flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px 5px}.table-area.lay .sn-row .sn{max-width:calc(100% - 14px)}}
+.table-area .seat .botm{flex:none;font-size:.85em;line-height:1}
+.mebar b.grow{min-width:0;flex:1 1 60px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mebar .pips{flex:none}
+@media (max-width:700px){.mebar{gap:8px}.mebar .pips i{width:10px;height:8px}.mebar b.grow{font-size:16px}}
