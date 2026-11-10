@@ -64,3 +64,11 @@
 /* اللوحة الجانبية والنوافذ */
 [data-theme="majlis"] .side{background:var(--mj-ink)}
 [data-theme="majlis"] .panel,[data-theme="majlis"] .sheet{background:var(--mj-floor2);border-color:var(--mj-saffron)}
+
+/* الجلسة العربية مع التوزيع الجديد: نفس قواعد الحجم الثابت، إطار رفيع فقط */
+[data-theme="majlis"] .table-area .seat.turn{box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 0 0 5px var(--mj-saffron)!important;border-color:var(--mj-sand)!important}
+[data-theme="majlis"] .table-area .seat.next{box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 8px 14px rgba(0,0,0,.5)!important;border:2px dashed var(--mj-sand)!important}
+[data-theme="majlis"] .table-area .seat.tgt{box-shadow:inset 0 0 0 5px rgba(0,0,0,.18),0 0 0 5px #c0392b!important}
+[data-theme="majlis"] .table-area .seat{outline-width:4px}
+[data-theme="majlis"] .table-area.lay .felt{margin:14px 6px 18px}
+[data-theme="majlis"] .autobar{background:rgba(23,69,63,.6);border-color:var(--mj-sand)}
