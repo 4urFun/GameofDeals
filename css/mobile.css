@@ -72,3 +72,22 @@
   .mezone .bank-empty{white-space:nowrap}
 }
 .mebar .metag{display:none}@media (max-width:700px){.mebar .metag{display:inline-block}}
+/* v26: شريط علوي أنحف في الجوال فقط */
+@media (max-width:700px){
+  .game > .topbar{padding-block:calc(4px + env(safe-area-inset-top)) 4px;gap:6px}
+  .game > .topbar .icon-btn{height:30px;min-height:0;min-width:0;padding:0 10px;font-size:13.5px;line-height:1;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;padding:3px 10px 0!important}
+  .game > .topbar [data-go=menu]{width:34px;padding:0!important;font-size:16px}
+  .game > .topbar .turnb{font-size:16px;line-height:1.15}
+  .game > .topbar .code-s{font-size:12.5px}
+  .game > .topbar .icon-btn .badge{top:-5px}
+  .game .table-area.lay{margin-top:4px}
+}
+/* v26: مسافة أقل بين ساحة اللعب وصندوقك (خانة الأمر تبقى محجوزة كاملة) */
+@media (max-width:700px){
+  .table-area.lay .tcenter{padding-bottom:2px!important}
+  .mezone{margin-top:3px!important}
+}
+@media (max-width:700px){
+  .table-area.lay .tslot .pending{padding:7px 12px;gap:4px;row-gap:4px}
+  .table-area.lay .tslot .pending .row .btn.sm{padding:2px 14px;min-height:30px;height:30px}
+}
