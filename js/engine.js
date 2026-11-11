@@ -259,7 +259,7 @@ function respOK(S,pd,who,a){const t=pd.queue[0];const isT=who===t;const pay=PAY_
  }return false;}
 function payAmount(S,pd,t){const m=pd.mult||1;switch(pd.a){case 'rent':case 'rentwild':return rentOf(S.P[pd.rentOwner||pd.benef],pd.color)*m;case 'rentgold':return rentOf(S.P[pd.rentOwner],pd.color)*m;
  case 'cash':return 2;case 'tax':return 3*m;case 'pay5':return 5;case 'spit':return 13*m;
- case 'eslahat':{const p=S.P[t];let s=0;s+=3*setsCount(p);for(const c in p.bld)for(const b of p.bld[c]){const bt=C(b).b;s+=bt==='fence'?2:1;}s+=2*p.lands.filter(l=>T(l.i)==='joker').length;return s;}
+ case 'eslahat':{const p=S.P[pd.from]||S.P[t];let s=0;s+=3*setsCount(p);for(const c in p.bld)for(const b of p.bld[c]){const bt=C(b).b;s+=bt==='fence'?2:1;}s+=2*p.lands.filter(l=>T(l.i)==='joker').length;return s;}
  case 'rusoom':return looseLands(S.P[t]).length;}return 0;}
 function payable(p){return p.bank.filter(i=>T(i)!=='visa').concat(looseLands(p));}
 function minCover(items,need){if(need<=0)return [];if(!items.length)return [];const lim=Math.min(items.length,14);let best=null,bs=1e9;for(let mask=1;mask<(1<<lim);mask++){let sm=0;for(let k=0;k<lim;k++)if(mask&(1<<k))sm+=cardVal(items[k]);if(sm>=need&&sm<bs){bs=sm;best=mask;}}if(best==null)return items.slice();const r=[];for(let k=0;k<lim;k++)if(best&(1<<k))r.push(items[k]);return r;}
@@ -274,13 +274,13 @@ function doPay(S,payer,payee,cards,opts){const a=S.P[payer],b=S.P[payee];opts=op
  if(uLand.length&&uBank.length<cash.length)return 'لازم تدفع كل أموال البنك أولاً، وبعدها تكمّل بالأراضي';
  if(sum<amt&&cards.length<pool.length)return `المبلغ المختار ${sum}M أقل من المطلوب ${amt}M`;
  for(const i of cards){const k=a.bank.indexOf(i);if(k>=0){b.bank.push(a.bank.splice(k,1)[0]);}else{const l=removeLand(a,i);b.lands.push(l);}}
- fixBuildings(S,payer);if(cards.length)shown(S,payer,cards,'pay',`${nm(S,payer)} دفع ${sum}M لـ ${nm(S,payee)}`);log(S,`💸 ${nm(S,payer)} دفع ${sum}M لـ ${nm(S,payee)}${cards.length?' ('+cards.map(cn).join('، ')+')':' (لا يملك شيئاً)'}`);
+ fixBuildings(S,payer);if(cards.length)shown(S,payer,cards,'pay',`${nm(S,payer)} دفع ${sum}M لـ ${nm(S,payee)}`);log(S,amt<=0&&!cards.length?`💸 ${nm(S,payer)} ما عليه شيء يدفعه لـ ${nm(S,payee)} (المطلوب 0M)`:`💸 ${nm(S,payer)} دفع ${sum}M لـ ${nm(S,payee)}${cards.length?' ('+cards.map(cn).join('، ')+')':' (لا يملك شيئاً)'}`);
  if(opts.change&&sum>amt){const ci=a.hand.findIndex(i=>C(i).a==='change');if(ci>=0){S.discard.push(a.hand.splice(ci,1)[0]);let over=sum-amt;const back=[];const mon=b.bank.filter(i=>T(i)!=='visa').sort((x,y)=>cardVal(y)-cardVal(x));for(const i of mon){if(cardVal(i)<=over){over-=cardVal(i);back.push(i);}if(!over)break;}
    for(const i of back){b.bank.splice(b.bank.indexOf(i),1);a.bank.push(i);}if(over>0){for(const i of looseLands(b).sort((x,y)=>cardVal(y)-cardVal(x))){if(over<=0)break;const l=removeLand(b,i);a.lands.push(l);over-=cardVal(i);back.push(i);}}
    log(S,`💵 وين الباقي؟ ${nm(S,payee)} أرجع ${back.length?back.map(cn).join('، '):'لا شيء (لا يملك)'} إلى ${nm(S,payer)}`);fixBuildings(S,payee);}}
  return null;}
 function applyAccept(S){const pd=S.pending,t=pd.queue[0],from=pd.benef,P=S.P;pd.executed=true;
- if(PAY_ACTIONS.includes(pd.a)){const amt=payAmount(S,pd,t);if(amt<=0||(!payable(P[t]).length&&!hasVisa(P[t]))){log(S,`${nm(S,t)} لا يملك ما يدفعه (${amt}M)`);return nextTarget(S);}pd.stage='pay';pd.pay={payer:t,payee:from,amount:amt};return;}
+ if(PAY_ACTIONS.includes(pd.a)){const amt=payAmount(S,pd,t);if(amt<=0||(!payable(P[t]).length&&!hasVisa(P[t]))){log(S,amt<=0?`${nm(S,t)} ما عليه شيء يدفعه (المطلوب 0M)`:`${nm(S,t)} لا يملك ما يدفعه (المطلوب ${amt}M)`);return nextTarget(S);}pd.stage='pay';pd.pay={payer:t,payee:from,amount:amt};return;}
  const s=pd.sel[t];
  switch(pd.a){
  case 'dabatni':if(!looseLands(P[t]).length){log(S,`${nm(S,t)} لا يملك أرضاً خارج المجموعات`);return nextTarget(S);}pd.stage='choose';return;
