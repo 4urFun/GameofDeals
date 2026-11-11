@@ -167,6 +167,7 @@ function completeColors(p){const o=setInfo(p);return Object.keys(o).filter(c=>o[
 function fenced(p,c){return (p.bld[c]||[]).some(i=>C(i).b==='fence');}
 function missionsDone(p){return p.miss.filter(m=>m.done).length;}
 function setsCount(p){const o=setInfo(p);let s=0;for(const c in o)s+=o[c].sets;return s;}
+function freeSeats(S){if(!S||S.status!=='playing'||!S.P)return [];return S.order.filter(id=>{const pl=S.players.find(p=>p.id===id);return pl&&(pl.bot||(S.P[id]&&S.P[id].left));});}
 function score(p){return setsCount(p)+missionsDone(p);}
 function bankMoney(p){return p.bank.reduce((s,i)=>s+cardVal(i),0);}
 function hasVisa(p){return p.bank.some(i=>T(i)==='visa');}
@@ -310,6 +311,10 @@ function stageActor(S){const pd=S.pending;if(!pd)return null;const t=pd.queue[0]
 function act(S,u,op){
  const P=S.P;const T_=S.turn;
  if(op.type==='join'){if(S.status!=='lobby')return 'المباراة بدأت بالفعل';if(S.players.some(p=>p.id===u)){S.players.find(p=>p.id===u).name=op.name;return null;}if(S.players.length>=S.maxP)return 'الغرفة ممتلئة';S.players.push({id:u,name:op.name});log(S,`👋 انضم ${op.name}`);return null;}
+ // لاعب جديد يدخل مباراة جارية مكان بوت (أو مكان لاعب خرج) ويكمل بنفس أوراقه وتقدمه
+ if(op.type==='takeseat'){if(S.status!=='playing')return 'المباراة غير جارية';if(S.players.some(p=>p.id===u))return 'أنت موجود في المباراة';const sid=String(op.seat||'');if(!freeSeats(S).includes(sid))return 'هذا المقعد غير متاح';
+  const old=nm(S,sid),nn=String(op.name||'لاعب').trim().slice(0,18)||'لاعب';const R=JSON.parse(JSON.stringify(S).split(JSON.stringify(sid)).join(JSON.stringify(u)));for(const k of Object.keys(S))delete S[k];Object.assign(S,R);
+  const pl=S.players.find(p=>p.id===u);pl.name=nn;delete pl.bot;const P=S.P[u];P.auto=false;P.left=false;delete P.kicked;log(S,`🎮 ${nn} دخل مكان ${old} وكمّل عنه`);return null;}
  // البوتات: المضيف يضيف بوت في الانتظار
  if(op.type==='addbot'){if(u!==S.host||S.status!=='lobby')return 'غير مسموح';if(S.players.length>=S.maxP)return 'الغرفة ممتلئة';let k=1;while(S.players.some(p=>p.id==='bot'+k))k++;S.players.push({id:'bot'+k,name:'بوت '+k,bot:true});log(S,`🤖 انضم بوت ${k}`);return null;}
  // تسليم الدور للبوت / استرجاع التحكم (اللاعب نفسه فقط)
@@ -441,7 +446,7 @@ function playCard(S,me,ci,op){const P=S.P,p=P[me],c=C(ci),T_=S.turn;let a=c.t===
  log(S,`🃏 ${nm(S,me)} لعب ${pd.label}${pd.queue.length===1?' على '+nm(S,pd.queue[0]):''}`,'play');shown(S,me,cards,'play',`${nm(S,me)} لعب ${pd.label}${pd.queue.length===1?' على '+nm(S,pd.queue[0]):' على الجميع'}`);
  pd.played=cards;S.pending=pd;openTarget(S);return null;}
 function opLabel(a){const c=Object.values(CARDS).find(x=>x.a===a);return a==='rent'?'إيجار':c?c.n:a;}
-return {COLORS,CARDS,T,C,act,setInfo,looseLands,inSetLands,completeColors,fenced,score,setsCount,missionsDone,bankMoney,hasVisa,rentOf,payable,autoPick,newGame,stageActor,respOK,payAmount,needSel,selOptions,movesLeft,RESP,SINGLE,GROUP,SELF,MULTABLE,PAY_ACTIONS,DEFAULT_RULES,drawCountFor,opLabel,NO_BUILD,landOwner};
+return {COLORS,CARDS,T,C,act,setInfo,looseLands,inSetLands,completeColors,fenced,score,setsCount,missionsDone,bankMoney,hasVisa,rentOf,payable,autoPick,newGame,stageActor,respOK,payAmount,needSel,selOptions,movesLeft,RESP,SINGLE,GROUP,SELF,MULTABLE,PAY_ACTIONS,DEFAULT_RULES,drawCountFor,opLabel,NO_BUILD,landOwner,freeSeats};
 
 /*END*/
 
