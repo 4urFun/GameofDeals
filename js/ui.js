@@ -203,8 +203,15 @@ async function startHost(c,S,quiet){
 function onHostMsg(conn,msg){if(!msg||typeof msg!=='object')return;
  if(msg.t==='hello'){const u=String(msg.u||'').slice(0,64),name=String(msg.name||'لاعب').trim().slice(0,18)||'لاعب';if(!u||u===uid){conn.send({t:'err',m:'لا يمكن الانضمام من نفس الجهاز والمتصفح'});setTimeout(()=>conn.close(),400);return;}
   if(conn.authUid&&u!==conn.authUid){conn.send({t:'err',m:'هوية غير صحيحة'});setTimeout(()=>conn.close(),400);return;}const known=G.players.some(p=>p.id===u);
-  if(!known){if(G.status!=='lobby'){conn.send({t:'err',m:'المباراة في هذه الغرفة بدأت بالفعل'});setTimeout(()=>conn.close(),400);return;}const e=hostApply(u,{type:'join',name});if(e){conn.send({t:'err',m:e});setTimeout(()=>conn.close(),400);return;}}
-  if(conns[u]&&conns[u]!==conn)try{conns[u].close();}catch(e){}conn.u=u;conns[u]=conn;setOnline();sysChat(`${pname(u)} ${known?'رجع للغرفة':'انضم'}`);conn.send({t:'welcome'});broadcast();conn.send({t:'chat',m:chatMsgs});render();return;}
+  let took=null;
+  if(!known){if(G.status!=='lobby'){
+    // مباراة جارية: الداخل الجديد ياخذ مقعد بوت ويكمل بأوراقه وتقدمه (إذا أكثر من بوت يختار بنفسه)
+    const fs=E.freeSeats(G);if(G.status!=='playing'||!fs.length){conn.send({t:'err',m:G.status==='playing'?'المباراة بدأت وما فيه مقعد بوت فاضي تدخل مكانه':'المباراة في هذه الغرفة انتهت'});setTimeout(()=>conn.close(),400);return;}
+    const want=typeof msg.seat==='string'?msg.seat:null;const seat=want?(fs.includes(want)?want:null):(fs.length===1?fs[0]:null);
+    if(!seat){conn.u=null;conn.send({t:'seats',taken:!!want,list:fs.map(id=>({id,name:pname(id),sub:`${E.score(G.P[id])} مجموعات • ${G.P[id].hand.length} بطاقة • بنك ${E.bankMoney(G.P[id])}M`}))});return;}
+    took=pname(seat);const e=hostApply(u,{type:'takeseat',seat,name});if(e){conn.send({t:'err',m:e});setTimeout(()=>conn.close(),400);return;}}
+   else{const e=hostApply(u,{type:'join',name});if(e){conn.send({t:'err',m:e});setTimeout(()=>conn.close(),400);return;}}}
+  if(conns[u]&&conns[u]!==conn)try{conns[u].close();}catch(e){}conn.u=u;conns[u]=conn;setOnline();sysChat(took?`${pname(u)} دخل مكان ${took} وكمّل عنه`:`${pname(u)} ${known?'رجع للغرفة':'انضم'}`);conn.send({t:'welcome'});broadcast();conn.send({t:'chat',m:chatMsgs});render();return;}
  const u=conn.u;if(!u)return;
  if(msg.t==='op'){const op=msg.op||{};if(op.type==='leave'&&G.status==='lobby'){hostApply(u,{type:'leave'});conn.send({t:'ack',id:msg.id,err:null});setTimeout(()=>conn.close(),200);return;}
   if(['start','settings','restart','kick'].includes(op.type)){conn.send({t:'ack',id:msg.id,err:'هذا للمضيف فقط'});return;}
@@ -216,6 +223,8 @@ function wireGuest(conn,c,name,res,fail,to){
   conn.on('open',()=>conn.send({t:'hello',u:uid,name}));
   conn.on('data',msg=>{if(!msg)return;
    if(msg.t==='err'){if(!to.done)fail(msg.m);else{toast(msg.m,'err');leaveView();}return;}
+   if(msg.t==='seats'){clearTimeout(to.id);const L=msg.list||[];
+    ask('المباراة بدأت: اختر البوت اللي تكمل مكانه',L.map(o=>({v:o.id,label:'🤖 '+o.name,sub:o.sub})),{sub:msg.taken?'البوت اللي اخترته أخذه لاعب ثاني، اختر غيره':'تدخل مكانه وتكمل بنفس أوراقه وأراضيه وبنكه',cancelText:'رجوع'}).then(v=>{if(to.done)return;if(!v){fail('ما دخلت المباراة');return;}to.id=setTimeout(()=>fail('المضيف ما رد. تأكد أن صفحة اللعبة مفتوحة عنده وجرّب مرة ثانية.'),15000);try{conn.send({t:'hello',u:uid,name,seat:v});}catch(e){fail('تعذّر الإرسال');}});return;}
    if(msg.t==='welcome'){clearTimeout(to.id);const first=!to.done;to.done=true;hostConn=conn;hostOK=true;LS.set('room',c);LS.set('role','guest');LS.set('name',name);if(first){prevLogLen=-1;if(view!=='table')view=G&&G.status&&G.status!=='lobby'?'table':'lobby';res(true);}else render();return;}
    if(msg.t==='state'){if(msg.hn)clockSkew=msg.hn-Date.now();const old=G;online=new Set(msg.online||[]);onGame(old,msg.s);return;}
    if(msg.t==='chat'){chatMsgs=msg.m||[];renderSide();return;}
@@ -488,7 +497,7 @@ function tableV(){const S=G;if(!S.P||(!S.P[uid]&&S.status!=='ended'))return `<di
   <div class="tslot ${S.pending?'has-pend':''}">${lastPlayV(S)}${S.pending?`<div class="pend-desk">${pendingV()}</div>`:`<div class="lastlog">${lg?esc(lg.m):''}</div>`}</div></div></div>
  ${S.pending?`<div class="pendwrap">${pendingV()}</div>`:''}
  ${myT&&T_.phase==='jail'?jailV():''}
- <section class="mezone" id="myzone"><div class="myhint" id="myhint">ارمها هنا</div>${meP.auto?`<div class="autobar">🤖 البوت يلعب عنك الحين${meP.kicked?'':' <button class="btn sm gold" data-go="reclaim">استرجع التحكم</button>'}</div>`:''}<div class="mebar"><b class="grow">${esc(pname(uid))}</b>${pipsV(E.score(meP),S.cfg.winSets)}<span class="bankchip">🏦 <b>${E.bankMoney(meP)}M</b>${E.hasVisa(meP)?' + فيزا':''}</span><button class="btn sm" data-go="mymiss">مهماتي (${meP.miss.filter(m=>m.done).length}/${meP.miss.length})</button></div>
+ <section class="mezone" id="myzone"><div class="myhint" id="myhint">ارمها هنا</div>${meP.auto?`<div class="autobar">🤖 البوت يلعب عنك الحين${meP.kicked?'':' <button class="btn sm gold" data-go="reclaim">استرجع التحكم</button>'}</div>`:''}<div class="mebar"><b class="grow">${esc(pname(uid))}</b>${nextOf(S)===uid&&S.turn.p!==uid?'<span class="nexttag metag">التالي</span>':''}${pipsV(E.score(meP),S.cfg.winSets)}<span class="bankchip">🏦 <b>${E.bankMoney(meP)}M</b>${E.hasVisa(meP)?' + فيزا':''}</span><button class="btn sm" data-go="mymiss">مهماتي (${meP.miss.filter(m=>m.done).length}/${meP.miss.length})</button></div>
  <div class="board"><div class="board-lands"><div class="board-h">أراضيك</div><div class="field-area">${fieldV(uid)}</div></div>
  <div class="board-bank"><div class="board-h">البنك <b>${E.bankMoney(meP)}M</b></div><div class="bank">${meP.bank.length?meP.bank.map(i=>E.T(i)==='visa'?`<span class="coin visa">VISA</span>`:`<span class="coin">${E.C(i).v}M</span>`).join(''):'<span class="bank-empty">اسحب الفلوس هنا</span>'}</div></div></div>
  ${hacked?`<div class="note warn">أنت تلعب دور ${esc(pname(hu))} الآن (HACKER). أي أمر تلعبه يكون لصالحه.</div>`:''}</section>
