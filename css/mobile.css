@@ -38,3 +38,37 @@
   html.handcol .handbar{margin-bottom:max(6px,env(safe-area-inset-bottom))}
 }
 @keyframes togpulse{50%{box-shadow:0 0 0 5px rgba(232,193,112,.35)}}
+/* ===== v24: صندوقك في الجوال (شاشات أصغر من 700px فقط) ===== */
+@media (max-width:700px){
+  /* حذف شريط «التالي: …» فوق المقاعد */
+  .table-area.lay .dirline{display:none!important}
+  /* الصندوق أقرب للطاولة وأصغر حواشي */
+  .mezone{margin-top:6px!important;padding:6px 10px 8px!important;position:relative;row-gap:4px!important}
+  .mebar{gap:6px!important;margin:0!important;flex-wrap:nowrap;min-height:0}
+  .mebar .pips i{width:9px!important;height:8px!important}
+  .mebar .bankchip{padding:2px 10px 2px 6px;font-size:14px;white-space:nowrap;flex:none}
+  .mebar [data-go=mymiss]{flex:none;padding:2px 9px;min-height:0;line-height:22px;font-size:12.5px;white-space:nowrap}
+  .mebar .metag{position:absolute;top:-9px;inset-inline-end:16px;z-index:3;font-size:10.5px;line-height:15px;padding:0 7px;box-shadow:0 2px 6px rgba(0,0,0,.45)}
+  /* بدون عناوين «أراضيك» و«البنك» — المبلغ ظاهر فوق */
+  .mezone .board-h{display:none!important}
+  .mezone .board{grid-template-columns:minmax(0,1fr)!important;gap:6px!important}
+  .mezone .board-lands,.mezone .board-bank{padding:6px 8px!important;border-radius:12px}
+  /* الأراضي: سطر واحد بشريط تمرير يمين ويسار */
+  .mezone .field-area{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;overflow-y:hidden;gap:6px;height:108px;min-height:0!important;padding-bottom:0;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+  .mezone .field-area::-webkit-scrollbar{display:none}
+  .mezone .grp{flex:none;padding:3px 6px 5px;gap:2px;align-content:start}
+  .mezone .grp .lbl{font-size:11px;gap:4px}
+  .mezone .grp .cards :is(img,god-card){width:56px;max-width:none;margin-inline-start:-36px}
+  .mezone .grp .cards{width:max-content}
+  .mezone .grp .cards :is(img,god-card):first-child{margin-inline-start:0}
+  .mezone .grp .cards>*,.mezone .grp .blds>*{flex:none}
+  .mezone .grp .blds :is(img,god-card){width:24px;max-width:none}
+  .mezone .empty-field{min-height:0!important;height:100%;box-sizing:border-box}
+  /* البنك: سطر واحد بشريط تمرير */
+  .mezone .bank{display:flex;flex-wrap:nowrap!important;overflow-x:auto;overflow-y:hidden;gap:6px;min-height:40px!important;height:40px;scrollbar-width:none}
+  .mezone .bank::-webkit-scrollbar{display:none}
+  .mezone .coin{flex:none;width:36px!important;height:36px!important;font-size:12px}
+  .mezone .coin.visa{min-width:52px;height:30px!important;font-size:11px;padding:0 6px}
+  .mezone .bank-empty{white-space:nowrap}
+}
+.mebar .metag{display:none}@media (max-width:700px){.mebar .metag{display:inline-block}}
