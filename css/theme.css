@@ -431,3 +431,13 @@ html.noside .topbar .mobile-only{display:inline-flex!important}
 @container tbl (max-width:739px){.table-area.lay .seat-tags{min-height:15px}}
 @container tbl (min-width:740px){.table-area.lay .seat-tags{min-height:21px}}
 @container tbl (max-width:739px){.table-area.lay .sn-row .nexttag{font-size:10.5px;line-height:15px;padding:0 7px}}
+
+/* v27: اللابتوب والكمبيوتر — أوراق اليد مثبّتة أسفل الشاشة وتظهر كاملة دائماً بدون تمرير */
+@media (min-width:960px){
+  .game .tablecol > .handzone{position:sticky;bottom:0;z-index:40;display:grid;grid-template-columns:minmax(150px,210px) minmax(0,1fr) minmax(150px,210px);align-items:center;column-gap:10px;padding:6px 14px calc(6px + env(safe-area-inset-bottom))}
+  html[data-theme="classic"] .game .tablecol > .handzone{background:linear-gradient(180deg,rgba(13,11,31,.55),var(--bg) 26px)}
+  .game .tablecol > .handzone .actbar{grid-column:1;grid-row:1;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;min-height:0!important;margin:0}
+  .game .tablecol > .handzone .actbar .row{flex-wrap:wrap;gap:6px}
+  .game .tablecol > .handzone .hand{grid-column:2;grid-row:1;margin:0}
+  .game .tablecol > .handzone .hint{grid-column:3;grid-row:1;margin:0;font-size:12.5px;line-height:1.6;text-align:start;opacity:.8}
+}

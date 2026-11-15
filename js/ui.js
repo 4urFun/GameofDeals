@@ -416,12 +416,16 @@ function howtoV(){return `<div class="wrap"><div class="row" style="justify-cont
 
 // ---------- العرض
 function hsig(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)+'.'+s.length;}
+let lastView=null;
 function render(){const app=$('#app');let h='';
  switch(view){case 'home':h=homeV();break;case 'create':h=createV();break;case 'join':h=joinV();break;case 'lobby':h=G?lobbyV():loadingV();break;case 'table':h=G?tableV():loadingV();break;
   case 'gallery':h=galleryV();break;case 'howto':h=howtoV();break;case 'admin':h=adminV();break;case 'login':h=authV('login');break;case 'signup':h=authV('signup');break;case 'profile':h=profileV();break;default:h=homeV();}
  const keep=document.activeElement&&document.activeElement.id&&document.activeElement.tagName==='INPUT'?{id:document.activeElement.id,v:document.activeElement.value,p:document.activeElement.selectionStart}:null;
  const oh=$('#hand');const osig=oh&&view==='table'?oh.dataset.sig:null;
- app.innerHTML=h;
+ // نحفظ مكان التمرير عشان ما ترجع الشاشة لفوق مع كل حدث جديد
+ const osc=view==='table'&&lastView==='table'?[...document.querySelectorAll('main.tablecol')].map(e=>e.scrollTop):null;
+ app.innerHTML=h;lastView=view;
+ if(osc){const put=()=>{const ns=document.querySelectorAll('main.tablecol');osc.forEach((t,i)=>{if(ns[i]&&t&&Math.abs(ns[i].scrollTop-t)>1)ns[i].scrollTop=t;});};put();requestAnimationFrame(put);setTimeout(put,80);}
  /* اليد ما تتغير؟ نرجّع نفس العناصر القديمة بدل رسمها من جديد: ما تهتز البطاقات وما يرجع الشريط لأوله */
  if(osig){const nh=$('#hand');if(nh&&nh.dataset.sig===osig)nh.replaceWith(oh);}
  bind();if(view==='table'){layoutHand();renderSide();}if(view==='lobby')renderSide();
@@ -506,9 +510,9 @@ function tableV(){const S=G;if(!S.P||(!S.P[uid]&&S.status!=='ended'))return `<di
  <div class="hint">${hand.length?'الأراضي والفلوس اسحبها لساحتك، والأوامر ارمها في وسط الطاولة، أو اضغط على البطاقة لتشوف تفاصيلها':''}</div></section>
  </main><aside class="side" id="side"></aside></div></div>`;}
 function layoutHand(){const box=$('#hand');if(!box)return;const cards=[...box.querySelectorAll('.hc')];const n=cards.length;if(!n){box.style.height='60px';return;}const W=box.clientWidth;
- const desk=window.innerWidth>=960;const cw=Math.round(desk?Math.min(205,window.innerHeight*0.27*400/597):Math.max(96,Math.min(170,W*0.38,window.innerHeight*0.30*400/597)));
- const ch=cw*597/400;box.style.height=Math.round(ch+18)+'px';const Wu=W-16;const step=n>1?Math.min(cw*0.86,(Wu-cw)/(n-1)):0;const total=cw+step*(n-1);const start=(W-total)/2;const mid=(n-1)/2;const ang=Math.min(2.2,14/n);
- cards.forEach((c,k)=>{const off=k-mid;c.style.width=cw+'px';c.style.right=(start+step*k)+'px';c.style.zIndex=10+k;c.style.setProperty('--t',`translateY(${(Math.abs(off)*Math.abs(off)*0.7).toFixed(1)}px) rotate(${(off*ang).toFixed(2)}deg)`);});}
+ const desk=window.innerWidth>=960;const cw=Math.round(desk?Math.min(190,window.innerHeight*0.21*400/597):Math.max(96,Math.min(170,W*0.38,window.innerHeight*0.30*400/597)));
+ const ch=cw*597/400;const mid=(n-1)/2;const drop=desk?Math.ceil(mid*mid*0.7+Math.sin(Math.min(2.2,14/n)*mid*Math.PI/180)*cw*0.5):0;box.style.height=Math.round(ch+18+drop)+'px';box.style.setProperty('--hdrop',drop+'px');const Wu=W-16;const step=n>1?Math.min(cw*0.86,(Wu-cw)/(n-1)):0;const total=cw+step*(n-1);const start=(W-total)/2;const ang=Math.min(2.2,14/n);
+ cards.forEach((c,k)=>{const off=k-mid;c.style.width=cw+'px';c.style.right=(start+step*k)+'px';if(desk)c.style.bottom=(4+drop)+'px';c.style.zIndex=10+k;c.style.setProperty('--t',`translateY(${(Math.abs(off)*Math.abs(off)*0.7).toFixed(1)}px) rotate(${(off*ang).toFixed(2)}deg)`);});}
 let wideNow=innerWidth>=960;window.addEventListener('resize',()=>{if(view==='table'){const w=innerWidth>=960;if(w!==wideNow){wideNow=w;render();}else layoutHand();}});
 function lastPlayV(S){const ev=(S.evs||[]).slice(-1)[0];if(!ev)return '';return `<button class="lastplay k-${ev.k}" data-card="${esc(ev.c[0])}" aria-label="آخر حركة"><span class="lp-cards">${ev.c.slice(0,3).map(i=>`${kimg(img(i),` alt=""`)}`).join('')}</span><span class="lp-t">${esc(ev.t)}</span></button>`;}
 function onHandTap(id){cardModal(id,'hand');}
